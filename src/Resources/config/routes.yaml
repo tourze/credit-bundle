@@ -1,3 +1,0 @@
-credit_controllers:
-  resource: '../../Controller/'
-  type: attribute
