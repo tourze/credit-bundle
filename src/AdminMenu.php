@@ -6,11 +6,10 @@ use CreditBundle\Entity\Account;
 use CreditBundle\Entity\Currency;
 use CreditBundle\Entity\TransferLog;
 use Knp\Menu\ItemInterface;
-use Tourze\EasyAdminMenuBundle\Attribute\MenuProvider;
 use Tourze\EasyAdminMenuBundle\Service\LinkGeneratorInterface;
+use Tourze\EasyAdminMenuBundle\Service\MenuProviderInterface;
 
-#[MenuProvider]
-class AdminMenu
+class AdminMenu implements MenuProviderInterface
 {
     public function __construct(private readonly LinkGeneratorInterface $linkGenerator)
     {
