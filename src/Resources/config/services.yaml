@@ -1,0 +1,23 @@
+services:
+  # default configuration for services in *this* file
+  _defaults:
+    autowire: true      # Automatically injects dependencies in your services.
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+    public: true # 方便我们读取
+
+  CreditBundle\AdminMenu: ~
+
+  CreditBundle\Command\:
+    resource: '../../Command/'
+  CreditBundle\Controller\:
+    resource: '../../Controller/'
+  CreditBundle\EventListener\:
+    resource: '../../EventListener/'
+  CreditBundle\EventSubscriber\:
+    resource: '../../EventSubscriber/'
+  CreditBundle\Procedure\:
+    resource: '../../Procedure/'
+  CreditBundle\Repository\:
+    resource: '../../Repository/'
+  CreditBundle\Service\:
+    resource: '../../Service/'
