@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use CreditBundle\Service\AccountService;
 use CreditBundle\Service\CurrencyService;
 use CreditBundle\Service\TransactionService;
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
@@ -21,6 +22,7 @@ use Tourze\UserIDBundle\Service\UserIdentityService;
 #[MethodTag('积分模块')]
 #[MethodDoc('创建积分订单')]
 #[MethodExpose('ServerCreateCreditTransactionByIdentity')]
+#[WithMonologChannel('procedure')]
 class ServerCreateCreditTransactionByIdentity extends LockableProcedure
 {
     #[MethodParam('身份名')]
@@ -48,7 +50,7 @@ class ServerCreateCreditTransactionByIdentity extends LockableProcedure
         private readonly UserIdentityService $userIdentityService,
         private readonly AccountService $accountService,
         private readonly CurrencyService $currencyService,
-        private readonly LoggerInterface $procedureLogger,
+        private readonly LoggerInterface $logger,
         private readonly TransactionService $transactionService,
     ) {
     }
@@ -80,7 +82,7 @@ class ServerCreateCreditTransactionByIdentity extends LockableProcedure
                 $this->transactionService->decrease($this->eventNo, $account, $this->amount, $this->remark);
             }
         } catch (\Throwable $throwable) {
-            $this->procedureLogger->error('创建积分订单失败', [
+            $this->logger->error('创建积分订单失败', [
                 'error' => $throwable,
             ]);
             if ($throwable instanceof ApiException) {
