@@ -8,7 +8,7 @@ use CreditBundle\Model\ConsumptionPreview;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Persistence\ManagerRegistry;
-use DoctrineEnhanceBundle\Repository\CommonRepositoryAware;
+
 
 /**
  * @method Transaction|null find($id, $lockMode = null, $lockVersion = null)
@@ -18,7 +18,6 @@ use DoctrineEnhanceBundle\Repository\CommonRepositoryAware;
  */
 class TransactionRepository extends ServiceEntityRepository
 {
-    use CommonRepositoryAware;
 
     public function __construct(ManagerRegistry $registry)
     {
