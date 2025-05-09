@@ -2,7 +2,6 @@
 
 namespace CreditBundle\Procedure;
 
-use AppBundle\Entity\BizUser;
 use AppBundle\Repository\BizUserRepository;
 use Carbon\Carbon;
 use CreditBundle\Entity\Transaction;
@@ -11,6 +10,7 @@ use CreditBundle\Repository\TransactionRepository;
 use CreditBundle\Service\AccountService;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Tourze\CurrencyManageBundle\Service\CurrencyManager;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
@@ -51,6 +51,7 @@ class AdminGetCreditTransactions extends BaseProcedure
         private readonly AccountService $accountService,
         private readonly AccountRepository $accountRepository,
         private readonly CurrencyManager $currencyManager,
+        private readonly UserLoaderInterface $userLoader,
         private readonly BizUserRepository $bizUserRepository,
     ) {
     }
@@ -62,9 +63,7 @@ class AdminGetCreditTransactions extends BaseProcedure
 
         // 用户ID
         if (null !== $this->userId) {
-            $bizUsers = $this->bizUserRepository->findBy([
-                'id' => $this->userId,
-            ]);
+            $bizUsers = $this->userLoader->loadUserByIdentifier($this->userId);
             $this->filterBizUsers($qb, $bizUsers);
         }
 
@@ -111,9 +110,6 @@ class AdminGetCreditTransactions extends BaseProcedure
         return $this->fetchList($qb, fn (Transaction $item) => $item->retrieveAdminArray());
     }
 
-    /**
-     * @param BizUser[] $bizUsers
-     */
     private function filterBizUsers(QueryBuilder $qb, array $bizUsers): void
     {
         if (empty($bizUsers)) {

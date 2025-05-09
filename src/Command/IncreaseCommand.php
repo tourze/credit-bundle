@@ -2,10 +2,10 @@
 
 namespace CreditBundle\Command;
 
-use AppBundle\Repository\BizUserRepository;
 use CreditBundle\Service\AccountService;
 use CreditBundle\Service\CurrencyService;
 use CreditBundle\Service\TransactionService;
+use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -17,7 +17,7 @@ use Tourze\SnowflakeBundle\Service\Snowflake;
 class IncreaseCommand extends Command
 {
     public function __construct(
-        private readonly BizUserRepository $userRepository,
+        private readonly UserLoaderInterface $userLoader,
         private readonly AccountService $accountService,
         private readonly CurrencyService $currencyService,
         private readonly TransactionService $transactionService,
@@ -39,7 +39,7 @@ class IncreaseCommand extends Command
     {
         $currency = $this->currencyService->getCurrencyByCode($input->getArgument('currency'));
 
-        $bizUser = $this->userRepository->find($input->getArgument('userId'));
+        $bizUser = $this->userLoader->loadUserByIdentifier($input->getArgument('userId'));
         $account = $this->accountService->getAccountByUser($bizUser, $currency);
 
         $amount = abs($input->getArgument('amount'));

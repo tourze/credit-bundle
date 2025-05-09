@@ -2,13 +2,13 @@
 
 namespace CreditBundle\Procedure;
 
-use AppBundle\Repository\BizUserRepository;
 use Carbon\Carbon;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use CreditBundle\Service\AccountService;
 use Doctrine\Common\Collections\Criteria;
+use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
 use Tourze\CurrencyManageBundle\Service\CurrencyManager;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
@@ -40,13 +40,13 @@ class GetCreditTransactionsByBizUserId extends CacheableProcedure
         private readonly AccountService $accountService,
         private readonly AccountRepository $accountRepository,
         private readonly CurrencyManager $currencyManager,
-        private readonly BizUserRepository $bizUserRepository,
+        private readonly UserLoaderInterface $userLoader,
     ) {
     }
 
     public function execute(): array
     {
-        $user = $this->bizUserRepository->find($this->userId);
+        $user = $this->userLoader->loadUserByIdentifier($this->userId);
         if (empty($user)) {
             throw new ApiException('暂无记录');
         }
