@@ -3,13 +3,13 @@
 namespace CreditBundle\Procedure;
 
 use AppBundle\Repository\BizUserRepository;
-use AppBundle\Service\CurrencyManager;
 use Carbon\Carbon;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use CreditBundle\Service\AccountService;
 use Doctrine\Common\Collections\Criteria;
+use Tourze\CurrencyManageBundle\Service\CurrencyManager;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
 use Tourze\JsonRPC\Core\Attribute\MethodParam;

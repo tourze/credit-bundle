@@ -4,7 +4,6 @@ namespace CreditBundle\Procedure;
 
 use AppBundle\Entity\BizUser;
 use AppBundle\Repository\BizUserRepository;
-use AppBundle\Service\CurrencyManager;
 use Carbon\Carbon;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Repository\AccountRepository;
@@ -13,6 +12,7 @@ use CreditBundle\Service\AccountService;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Tourze\CurrencyManageBundle\Service\CurrencyManager;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
 use Tourze\JsonRPC\Core\Attribute\MethodParam;

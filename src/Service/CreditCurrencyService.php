@@ -6,14 +6,15 @@ use Brick\Money\Currency;
 use CreditBundle\Repository\CurrencyRepository;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
+use Tourze\CurrencyManageBundle\Service\CurrencyService as BaseCurrencyService;
 
-#[AsDecorator(decorates: \AppBundle\Service\CurrencyService::class, priority: CreditCurrencyService::PRIORITY)]
-class CreditCurrencyService implements \AppBundle\Service\CurrencyService
+#[AsDecorator(decorates: BaseCurrencyService::class, priority: CreditCurrencyService::PRIORITY)]
+class CreditCurrencyService implements BaseCurrencyService
 {
     public const PRIORITY = 99;
 
     public function __construct(
-        #[AutowireDecorated] private readonly \AppBundle\Service\CurrencyService $inner,
+        #[AutowireDecorated] private readonly BaseCurrencyService $inner,
         private readonly CurrencyRepository $pointRepository,
     ) {
     }
