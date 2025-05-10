@@ -11,8 +11,6 @@ services:
     resource: '../../Controller/'
   CreditBundle\EventListener\:
     resource: '../../EventListener/'
-  CreditBundle\EventSubscriber\:
-    resource: '../../EventSubscriber/'
   CreditBundle\Procedure\:
     resource: '../../Procedure/'
   CreditBundle\Repository\:

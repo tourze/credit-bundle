@@ -2,14 +2,7 @@
 
 namespace CreditBundle\Entity;
 
-use AntdCpBundle\Builder\Action\ModalFormAction;
-use AntdCpBundle\Builder\Field\InputNumberField;
-use AntdCpBundle\Builder\Field\LongTextField;
-use AntdCpBundle\Service\FormFieldBuilder;
-use CreditBundle\Exception\TransactionException;
-use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransferLogRepository;
-use CreditBundle\Service\TransactionService;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -21,14 +14,12 @@ use Tourze\DoctrineTimestampBundle\Attribute\CreateTimeColumn;
 use Tourze\DoctrineTimestampBundle\Attribute\UpdateTimeColumn;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
-use Tourze\EasyAdmin\Attribute\Action\HeaderAction;
 use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
 use Tourze\EasyAdmin\Attribute\Column\ListColumn;
 use Tourze\EasyAdmin\Attribute\Field\FormField;
 use Tourze\EasyAdmin\Attribute\Filter\Filterable;
 use Tourze\EasyAdmin\Attribute\Filter\Keyword;
 use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
-use Tourze\JsonRPC\Core\Exception\ApiException;
 
 #[AsPermission(title: '交易流水（旧）', titleOverrideEnv: 'PAGE_TITLE_TRANSFER_LOG')]
 #[ORM\Entity(repositoryClass: TransferLogRepository::class)]
@@ -199,75 +190,6 @@ class TransferLog
         $this->inAmount = $inAmount;
 
         return $this;
-    }
-
-    #[HeaderAction(title: '创建交易记录')]
-    public function renderMakeAction(FormFieldBuilder $fieldHelper): ModalFormAction
-    {
-        return ModalFormAction::gen()
-            ->setFormTitle('创建交易记录')
-            ->setLabel('创建交易记录')
-            ->setFormWidth(600)
-            ->setFormFields([
-                $fieldHelper->createSelectFromEntityClass(Account::class)
-                    ->setRules([['required' => true, 'message' => '请选择转出账户']])
-                    ->setSpan(16)
-                    ->setId('out_account')
-                    ->setLabel('转出账户'),
-                InputNumberField::gen()
-                    ->setSpan(8)
-                    ->setId('amount')
-                    ->setLabel('转出金额')
-                    ->setInputProps([
-                        'style' => ['width' => '100%'],
-                    ]),
-
-                $fieldHelper->createSelectFromEntityClass(Account::class)
-                    ->setRules([['required' => true, 'message' => '请选择转入账户']])
-                    ->setSpan(16)
-                    ->setId('in_account')
-                    ->setLabel('转入账户'),
-
-                LongTextField::gen()
-                    ->setId('remark')
-                    ->setLabel('备注'),
-            ])
-            ->setCallback(function (
-                array $form,
-                array $record,
-                TransactionService $transactionService,
-                AccountRepository $accountRepository,
-            ) {
-                $outAccount = $accountRepository->find($form['out_account']);
-                if (!$outAccount) {
-                    throw new ApiException('找不到转出账号');
-                }
-
-                $inAccount = $accountRepository->find($form['in_account']);
-                if (!$inAccount) {
-                    throw new ApiException('找不到转入账号');
-                }
-
-                try {
-                    $res = $transactionService->transfer(
-                        $outAccount,
-                        $inAccount,
-                        $form['amount'],
-                        $form['remark'],
-                    );
-                } catch (TransactionException $e) {
-                    throw new ApiException($e->getMessage(), $e->getCode(), previous: $e);
-                }
-
-                return [
-                    '__message' => '交易成功',
-                    'form' => $form,
-                    'record' => $record,
-                    'transaction' => [
-                        'id' => $res,
-                    ],
-                ];
-            });
     }
 
     public function getExpireTime(): ?\DateTimeInterface
