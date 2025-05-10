@@ -147,7 +147,7 @@ class TransactionTest extends AbstractTestCase
         
         // 断言过期时间是未来的日期
         $now = new DateTime();
-        $this->assertGreaterThan($now, $transaction->getExpireTime());
+        $this->assertGreaterThan($now->getTimestamp(), $transaction->getExpireTime()->getTimestamp());
     }
     
     /**
