@@ -2,7 +2,6 @@
 
 namespace CreditBundle\Entity;
 
-use AntdCpBundle\Builder\Field\DynamicFieldSet;
 use CreditBundle\Repository\AccountRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -80,8 +79,6 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
     private ?UserInterface $user = null;
 
     /**
-     * @DynamicFieldSet()
-     *
      * @var Collection<Limit>
      */
     #[FormField(title: '交易限制')]
