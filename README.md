@@ -1,29 +1,144 @@
-# 积分模块
+# tourze/credit-bundle
 
-一个通用的积分、信用模块
+[English](README.md) | [中文](README.zh-CN.md)
 
-积分这里的设计，会涉及到一个实体值的存储设计，需要认真想好。
-可以参考 http://doumaomao.github.io/blog/%E5%85%B3%E4%BA%8E%E7%A7%AF%E5%88%86%E5%85%91%E6%8D%A2%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E7%9A%84%E6%80%9D%E8%80%83.html
+[![Latest Version](https://img.shields.io/packagist/v/tourze/credit-bundle.svg?style=flat-square)](https://packagist.org/packages/tourze/credit-bundle)
+[![Build Status](https://github.com/tourze/php-monorepo/actions/workflows/packages%2Fcredit-bundle%2F.github%2Fworkflows%2Fphpunit.yml/badge.svg)](https://github.com/tourze/php-monorepo/actions/workflows/packages/credit-bundle/.github/workflows/phpunit.yml)
+[![Quality Score](https://img.shields.io/scrutinizer/g/tourze/credit-bundle.svg?style=flat-square)](https://scrutinizer-ci.com/g/tourze/credit-bundle)
+[![Total Downloads](https://img.shields.io/packagist/dt/tourze/credit-bundle.svg?style=flat-square)](https://packagist.org/packages/tourze/credit-bundle)
 
-为了方便统计积分出入情况，需要新增一个 Account（账户） 的概念。
-一次转账事务，必然会有 转出方账户 和 转入方账户。
-还要引入一个记账的概念？
+This is a credit management module.
 
-TODO 过期积分的逻辑实现
+## Features
 
-这部分逻辑太重要，需要了解以下内容再继续：
+- Manages user and system credit accounts for multiple currencies.
+- Supports credit increase, decrease, and transfer operations.
+- Provides services for account and transaction management.
+- Includes asynchronous processing for credit operations.
+- Supports credit expiration and transaction remarks.
+- Allows associating transactions with other business entities.
+- Manages transaction limits and adjustment requests.
+- Provides command-line tools for credit management tasks.
 
-1. [账户系统和会计系统的设计](https://juejin.cn/post/6844904105995927566)
-2. [全面解构支付系统设计——你不可不知的会计核心](http://www.woshipm.com/pd/1586244.html)
-3. [账务系统设计](https://www.jianshu.com/p/2f00e272f34f)
-4. [“退款转付款”的设计方法](https://www.woshipm.com/pd/5965961.html)
+## Installation
 
-## 外部积分的对接
+```bash
+composer require tourze/credit-bundle
+```
 
-在实际开发过程中，我们可能需要使用外部积分，外部积分一般我们需要调用第三方接口去查询，同时呢本地也需要一些数据来进行校正，还是比较麻烦的。
-为此，我们的做法是在模块尽量分发事件出去，然后让事件去控制这个
+## Quick Start
 
-## 积分过期的实现
+```php
+<?php
 
-我们使用子账号来实现这个。一个主账号会有N个子账号。
-然后子账号才有过期时间，统计主账号的余额等信息，就是统计主+子账号的所有余额信息。
+use CreditBundle\Service\AccountService;
+use CreditBundle\Service\TransactionService;
+use CreditBundle\Entity\Currency; // You'll need to obtain/create a Currency instance
+use App\Entity\User; // You'll need to obtain/create a User instance (implementing Symfony\Component\Security\Core\User\UserInterface)
+
+// Prerequisites:
+// 1. Ensure AccountService and TransactionService are available (e.g., via Symfony DI).
+// 2. Obtain or create a `Currency` entity instance.
+// 3. Obtain or create `User` entity instances.
+
+/**
+ * @var AccountService $accountService
+ * @var TransactionService $transactionService
+ * @var Currency $currencyInstance // e.g., fetched from DB or created
+ * @var User $userOne // An instance of your User entity
+ * @var User $userTwo // An instance of your User entity
+ */
+
+// Get/create credit accounts for users
+$accountUserOne = $accountService->getAccountByUser($userOne, $currencyInstance);
+$accountUserTwo = $accountService->getAccountByUser($userTwo, $currencyInstance);
+
+// Increase credit for User One
+$eventNoIncrease = 'YOUR_UNIQUE_EVENT_ID_1'; // Ensure this is unique per operation
+$transactionService->increase(
+    $eventNoIncrease,
+    $accountUserOne,
+    100.0, // Amount
+    'Welcome bonus' // Remark
+);
+
+// Decrease credit for User One
+$eventNoDecrease = 'YOUR_UNIQUE_EVENT_ID_2'; // Ensure this is unique
+$transactionService->decrease(
+    $eventNoDecrease,
+    $accountUserOne,
+    25.0, // Amount
+    'Purchase item #123' // Remark
+);
+
+// Transfer credit from User One to User Two
+$eventNoTransfer = $transactionService->transfer(
+    $accountUserOne,
+    $accountUserTwo,
+    50.0, // Amount
+    'Gift for User Two'
+);
+
+// For asynchronous operations:
+// $transactionService->asyncIncrease(...);
+// $transactionService->asyncDecrease(...);
+
+// Note: Check the Account entity (e.g., getEndingBalance()) or related services for balance retrieval methods.
+
+```
+
+## Documentation
+
+This bundle provides several services to manage credits:
+
+-   `CreditBundle\Service\AccountService`: For managing credit accounts (retrieving, creating for users or system).
+-   `CreditBundle\Service\TransactionService`: For performing credit transactions like increase, decrease, and transfer.
+-   `CreditBundle\Service\CreditIncreaseService`: Handles the logic for increasing credits, including asynchronous operations.
+-   `CreditBundle\Service\CreditDecreaseService`: Handles the logic for decreasing credits, including asynchronous operations and consumption tracking.
+-   `CreditBundle\Service\CurrencyService`: For managing currencies used in the credit system.
+-   `CreditBundle\Service\TransactionLimitService`: For managing transaction limits.
+
+Key Entities:
+-   `CreditBundle\Entity\Account`: Represents a credit account for a user or system, tied to a currency.
+-   `CreditBundle\Entity\Transaction`: Represents a single credit transaction (increase or decrease).
+-   `CreditBundle\Entity\Currency`: Represents a currency type (e.g., points, virtual cash).
+-   `CreditBundle\Entity\Limit`: Defines transaction limits for accounts.
+-   `CreditBundle\Entity\AdjustRequest`: For managing manual credit adjustments.
+-   `CreditBundle\Entity\ConsumeLog`: Logs how credit from income transactions is consumed by outgoing transactions.
+
+Configuration:
+This bundle relies on Symfony's autowiring and service autoconfiguration. There are no specific bundle-level configuration parameters required in your `config/packages/credit.yaml` or similar files for basic operation. Services are automatically configured via `services.yaml` within the bundle.
+
+API Documentation:
+- Detailed API documentation is planned and will be linked here. For now, please refer to the service and entity class docblocks for method signatures and descriptions.
+
+Advanced Features:
+- **Asynchronous Operations:** Certain credit operations (e.g., `asyncIncrease`, `asyncDecrease` in `TransactionService`) can be handled asynchronously for improved performance and responsiveness.
+- **Credit Expiration:** The `Transaction` entity includes an `expireTime` field, allowing for time-limited credits. Logic for handling expiration (e.g., `CalcExpireTransactionCommand`) is present.
+- **Transaction Limits:** The `Limit` entity and `TransactionLimitService` can be used to define and enforce limits on credit transactions.
+- **Manual Adjustments:** The `AdjustRequest` entity and related services/commands (e.g., `AdjustCreditCommand`) support manual credit adjustments with an approval workflow (implied by `AdjustRequestStatus`).
+- **Consumption Tracking:** `ConsumeLog` entity tracks how income transactions are utilized by outgoing transactions, providing detailed audit trails.
+
+Performance Optimization Suggestions:
+- Utilize asynchronous operations for non-critical credit updates.
+- Implement appropriate database indexing, especially for `Transaction` and `Account` tables on frequently queried columns.
+- Consider caching strategies for frequently accessed, rarely changing data like currency information or system account details.
+
+Further details will be added as the bundle evolves.
+
+## Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## License
+
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
+
+## Changelog
+
+- Initial README structure based on template.
+- Added preliminary Features, Quick Start, and Documentation sections based on initial code review.
+- Populated Documentation section with details on services, entities, and configuration.
+- Added notes on API documentation, advanced features, and performance optimization suggestions.
+- Created a placeholder `CONTRIBUTING.md` file.
+- Updated build status badge to GitHub Actions and corrected `CONTRIBUTING.md` link.
