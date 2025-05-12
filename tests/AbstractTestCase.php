@@ -14,10 +14,10 @@ abstract class AbstractTestCase extends TestCase
     {
         $user = $this->createMock(UserInterface::class);
         $user->method('getUserIdentifier')->willReturn('test-user');
-        
+
         return $user;
     }
-    
+
     /**
      * 生成随机小数金额
      */
@@ -25,7 +25,7 @@ abstract class AbstractTestCase extends TestCase
     {
         return round(mt_rand($min * 100, $max * 100) / 100, 2);
     }
-    
+
     /**
      * 生成随机事件号
      */
@@ -33,4 +33,4 @@ abstract class AbstractTestCase extends TestCase
     {
         return 'S' . time() . mt_rand(1000, 9999);
     }
-} 
+}

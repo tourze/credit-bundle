@@ -17,20 +17,20 @@ class TransactionServiceTest extends AbstractTestCase
     private MockObject&CreditIncreaseService $increaseService;
     private MockObject&CreditDecreaseService $decreaseService;
     private TransactionService $service;
-    
+
     protected function setUp(): void
     {
         $this->snowflake = $this->createMock(Snowflake::class);
         $this->increaseService = $this->createMock(CreditIncreaseService::class);
         $this->decreaseService = $this->createMock(CreditDecreaseService::class);
-        
+
         $this->service = new TransactionService(
             $this->snowflake,
             $this->increaseService,
             $this->decreaseService
         );
     }
-    
+
     /**
      * 测试转账调用减少和增加方法
      */
@@ -47,12 +47,12 @@ class TransactionServiceTest extends AbstractTestCase
         $context = ['key' => 'value'];
         $snowflakeId = '123456789';
         $eventNo = 'S' . $snowflakeId;
-        
+
         // 设置Snowflake模拟
         $this->snowflake->expects($this->once())
             ->method('id')
             ->willReturn($snowflakeId);
-        
+
         // 设置从账户减少积分的期望
         $this->decreaseService->expects($this->once())
             ->method('decrease')
@@ -66,7 +66,7 @@ class TransactionServiceTest extends AbstractTestCase
                 $context,
                 false
             );
-        
+
         // 设置向账户增加积分的期望
         $this->increaseService->expects($this->once())
             ->method('increase')
@@ -80,14 +80,14 @@ class TransactionServiceTest extends AbstractTestCase
                 null,
                 $context
             );
-        
+
         // 执行测试
         $result = $this->service->transfer($fromAccount, $toAccount, $amount, $remark, $context);
-        
+
         // 断言
         $this->assertEquals($eventNo, $result);
     }
-    
+
     /**
      * 测试当from账户无用户时不调用decrease
      */
@@ -103,27 +103,27 @@ class TransactionServiceTest extends AbstractTestCase
         $context = ['key' => 'value'];
         $snowflakeId = '123456789';
         $eventNo = 'S' . $snowflakeId;
-        
+
         // 设置Snowflake模拟
         $this->snowflake->expects($this->once())
             ->method('id')
             ->willReturn($snowflakeId);
-        
+
         // 期望不调用decrease方法
         $this->decreaseService->expects($this->never())
             ->method('decrease');
-        
+
         // 设置向账户增加积分的期望
         $this->increaseService->expects($this->once())
             ->method('increase');
-        
+
         // 执行测试
         $result = $this->service->transfer($fromAccount, $toAccount, $amount, $remark, $context);
-        
+
         // 断言
         $this->assertEquals($eventNo, $result);
     }
-    
+
     /**
      * 测试当to账户无用户时不调用increase
      */
@@ -139,27 +139,27 @@ class TransactionServiceTest extends AbstractTestCase
         $context = ['key' => 'value'];
         $snowflakeId = '123456789';
         $eventNo = 'S' . $snowflakeId;
-        
+
         // 设置Snowflake模拟
         $this->snowflake->expects($this->once())
             ->method('id')
             ->willReturn($snowflakeId);
-        
+
         // 设置从账户减少积分的期望
         $this->decreaseService->expects($this->once())
             ->method('decrease');
-        
+
         // 期望不调用increase方法
         $this->increaseService->expects($this->never())
             ->method('increase');
-        
+
         // 执行测试
         $result = $this->service->transfer($fromAccount, $toAccount, $amount, $remark, $context);
-        
+
         // 断言
         $this->assertEquals($eventNo, $result);
     }
-    
+
     /**
      * 测试增加方法调用增加服务
      */
@@ -174,7 +174,7 @@ class TransactionServiceTest extends AbstractTestCase
         $relationModel = 'TestModel';
         $relationId = '12345';
         $context = ['key' => 'value'];
-        
+
         // 设置增加积分服务的期望
         $this->increaseService->expects($this->once())
             ->method('increase')
@@ -188,7 +188,7 @@ class TransactionServiceTest extends AbstractTestCase
                 $this->equalTo($relationId),
                 $this->equalTo($context)
             );
-        
+
         // 执行测试
         $this->service->increase(
             $eventNo,
@@ -201,7 +201,7 @@ class TransactionServiceTest extends AbstractTestCase
             $context
         );
     }
-    
+
     /**
      * 测试减少方法调用减少服务
      */
@@ -216,7 +216,7 @@ class TransactionServiceTest extends AbstractTestCase
         $relationId = '12345';
         $context = ['key' => 'value'];
         $isExpired = true;
-        
+
         // 设置减少积分服务的期望
         $this->decreaseService->expects($this->once())
             ->method('decrease')
@@ -230,7 +230,7 @@ class TransactionServiceTest extends AbstractTestCase
                 $this->equalTo($context),
                 $this->equalTo($isExpired)
             );
-        
+
         // 执行测试
         $this->service->decrease(
             $eventNo,
@@ -243,7 +243,7 @@ class TransactionServiceTest extends AbstractTestCase
             $isExpired
         );
     }
-    
+
     /**
      * 测试回滚方法调用回滚服务
      */
@@ -258,7 +258,7 @@ class TransactionServiceTest extends AbstractTestCase
         $relationId = '12345';
         $context = ['key' => 'value'];
         $isExpired = false;
-        
+
         // 设置回滚积分服务的期望
         $this->decreaseService->expects($this->once())
             ->method('rollback')
@@ -272,7 +272,7 @@ class TransactionServiceTest extends AbstractTestCase
                 $this->equalTo($context),
                 $this->equalTo($isExpired)
             );
-        
+
         // 执行测试
         $this->service->rollback(
             $eventNo,
@@ -285,7 +285,7 @@ class TransactionServiceTest extends AbstractTestCase
             $isExpired
         );
     }
-    
+
     /**
      * 测试异步增加方法调用增加服务
      */
@@ -300,7 +300,7 @@ class TransactionServiceTest extends AbstractTestCase
         $relationModel = 'TestModel';
         $relationId = '12345';
         $context = ['key' => 'value'];
-        
+
         // 设置异步增加积分服务的期望
         $this->increaseService->expects($this->once())
             ->method('asyncIncrease')
@@ -314,7 +314,7 @@ class TransactionServiceTest extends AbstractTestCase
                 $this->equalTo($relationId),
                 $this->equalTo($context)
             );
-        
+
         // 执行测试
         $this->service->asyncIncrease(
             $eventNo,
@@ -327,4 +327,4 @@ class TransactionServiceTest extends AbstractTestCase
             $context
         );
     }
-} 
+}

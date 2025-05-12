@@ -15,11 +15,11 @@ class TransactionTest extends AbstractTestCase
     public function testConstruct_createsNewTransactionWithDefaultValues(): void
     {
         $transaction = new Transaction();
-        
+
         $this->assertNull($transaction->getId());
         // 其他属性在初始化之前访问可能会抛出异常，所以不在这里测试
     }
-    
+
     /**
      * 测试事件号存取
      */
@@ -27,12 +27,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $eventNo = 'TEST-' . time();
-        
+
         $transaction->setEventNo($eventNo);
-        
+
         $this->assertEquals($eventNo, $transaction->getEventNo());
     }
-    
+
     /**
      * 测试账户存取
      */
@@ -40,12 +40,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $account = TestDataFactory::createAccount();
-        
+
         $transaction->setAccount($account);
-        
+
         $this->assertSame($account, $transaction->getAccount());
     }
-    
+
     /**
      * 测试货币存取
      */
@@ -53,12 +53,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $currency = TestDataFactory::createCurrency();
-        
+
         $transaction->setCurrency($currency);
-        
+
         $this->assertSame($currency, $transaction->getCurrency());
     }
-    
+
     /**
      * 测试金额存取
      */
@@ -66,12 +66,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $amount = '123.45';
-        
+
         $transaction->setAmount($amount);
-        
+
         $this->assertEquals($amount, $transaction->getAmount());
     }
-    
+
     /**
      * 测试余额存取
      */
@@ -79,12 +79,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $balance = '123.45';
-        
+
         $transaction->setBalance($balance);
-        
+
         $this->assertEquals($balance, $transaction->getBalance());
     }
-    
+
     /**
      * 测试备注存取
      */
@@ -92,12 +92,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $remark = 'Test remark';
-        
+
         $transaction->setRemark($remark);
-        
+
         $this->assertEquals($remark, $transaction->getRemark());
     }
-    
+
     /**
      * 测试过期时间存取
      */
@@ -105,12 +105,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $expireTime = new DateTime('+30 days');
-        
+
         $transaction->setExpireTime($expireTime);
-        
+
         $this->assertSame($expireTime, $transaction->getExpireTime());
     }
-    
+
     /**
      * 测试上下文存取
      */
@@ -118,23 +118,23 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $context = ['key1' => 'value1', 'key2' => 'value2'];
-        
+
         $transaction->setContext($context);
-        
+
         $this->assertEquals($context, $transaction->getContext());
     }
-    
+
     /**
      * 测试检查过期状态
      */
     public function testCheckExpired_withNoExpireTime_returnsFalse(): void
     {
         $transaction = new Transaction();
-        
+
         // 如果没有提供isExpired方法，可以检查expireTime是否为null
         $this->assertNull($transaction->getExpireTime());
     }
-    
+
     /**
      * 测试检查过期状态 - 未来日期
      */
@@ -142,14 +142,14 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $expireTime = new DateTime('+30 days');
-        
+
         $transaction->setExpireTime($expireTime);
-        
+
         // 断言过期时间是未来的日期
         $now = new DateTime();
         $this->assertGreaterThan($now->getTimestamp(), $transaction->getExpireTime()->getTimestamp());
     }
-    
+
     /**
      * 测试检查过期状态 - 过去日期
      */
@@ -157,14 +157,14 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $expireTime = new DateTime('-1 day');
-        
+
         $transaction->setExpireTime($expireTime);
-        
+
         // 断言过期时间是过去的日期
         $now = new DateTime();
-        $this->assertLessThan($now, $transaction->getExpireTime());
+        $this->assertLessThan($now->getTimestamp(), $transaction->getExpireTime()->getTimestamp());
     }
-    
+
     /**
      * 测试关联ID存取
      */
@@ -172,12 +172,12 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $relationId = '12345';
-        
+
         $transaction->setRelationId($relationId);
-        
+
         $this->assertEquals($relationId, $transaction->getRelationId());
     }
-    
+
     /**
      * 测试关联模型存取
      */
@@ -185,20 +185,20 @@ class TransactionTest extends AbstractTestCase
     {
         $transaction = new Transaction();
         $relationModel = 'TestModel';
-        
+
         $transaction->setRelationModel($relationModel);
-        
+
         $this->assertEquals($relationModel, $transaction->getRelationModel());
     }
-    
+
     /**
      * 测试字符串表示
      */
     public function testTransactionStringRepresentation(): void
     {
         $transaction = TestDataFactory::createTransaction('TEST-123', null, 100.00);
-        
+
         // 在实体中可能没有__toString方法，改为测试事件号
         $this->assertEquals('TEST-123', $transaction->getEventNo());
     }
-} 
+}

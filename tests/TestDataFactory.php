@@ -21,13 +21,13 @@ class TestDataFactory
         $currency->setName($name);
         $currency->setMain($main);
         $currency->setValid($valid);
-        
+
         // 使用反射设置ID
         self::setEntityId($currency, 1);
-        
+
         return $currency;
     }
-    
+
     /**
      * 创建Account实体
      */
@@ -35,90 +35,92 @@ class TestDataFactory
     {
         $account = new Account();
         $account->setName($name);
-        
+
         if ($currency === null) {
             $currency = self::createCurrency();
         }
-        
+
         $account->setCurrency($currency);
-        
+
         if ($user !== null) {
             $account->setUser($user);
         }
-        
+
         // 使用反射设置ID
         self::setEntityId($account, 1);
-        
+
         return $account;
     }
-    
+
     /**
      * 创建Transaction实体
      */
     public static function createTransaction(
-        string $eventNo = 'TEST-123',
-        ?Account $account = null,
-        float $amount = 100.00,
-        ?string $remark = 'Test transaction',
+        string              $eventNo = 'TEST-123',
+        ?Account            $account = null,
+        float               $amount = 100.00,
+        ?string             $remark = 'Test transaction',
         ?\DateTimeInterface $expireTime = null
-    ): Transaction {
+    ): Transaction
+    {
         $transaction = new Transaction();
         $transaction->setEventNo($eventNo);
-        
+
         if ($account === null) {
             $account = self::createAccount();
         }
-        
+
         $transaction->setAccount($account);
         $transaction->setCurrency($account->getCurrency());
         $transaction->setAmount($amount);
         $transaction->setBalance($amount);
         $transaction->setRemark($remark);
-        
+
         if ($expireTime !== null) {
             $transaction->setExpireTime($expireTime);
         }
-        
+
         // 使用反射设置ID
         self::setEntityId($transaction, 1);
-        
+
         return $transaction;
     }
-    
+
     /**
      * 创建Limit实体
      */
     public static function createLimit(
-        ?Account $account = null,
-        ?LimitType $type = null,
-        float $value = 1000.00,
+        ?Account            $account = null,
+        ?LimitType          $type = null,
+        float               $value = 1000.00,
         ?\DateTimeInterface $startTime = null,
         ?\DateTimeInterface $endTime = null
-    ): Limit {
+    ): Limit
+    {
         $limit = new Limit();
-        
+
         if ($account === null) {
             $account = self::createAccount();
         }
-        
+
         $limit->setAccount($account);
         $limit->setType($type ?? LimitType::DAILY_IN_LIMIT);
         $limit->setValue((int)$value);
-        
+
         if ($startTime !== null) {
             $limit->setStartTime($startTime);
         }
-        
+
         if ($endTime !== null) {
             $limit->setEndTime($endTime);
         }
-        
+
         // 使用反射设置ID
         self::setEntityId($limit, 1);
-        
+
         return $limit;
     }
-    
+
     /**
      * 使用反射设置实体ID
      */
@@ -133,4 +135,4 @@ class TestDataFactory
             // 忽略反射异常
         }
     }
-} 
+}
