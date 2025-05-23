@@ -4,9 +4,9 @@ namespace CreditBundle\Service;
 
 use Brick\Money\Currency;
 use CreditBundle\Repository\CurrencyRepository;
+use CreditBundle\Service\CurrencyServiceInterface as BaseCurrencyService;
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
-use Tourze\CurrencyManageBundle\Service\CurrencyService as BaseCurrencyService;
 
 #[AsDecorator(decorates: BaseCurrencyService::class, priority: CreditCurrencyService::PRIORITY)]
 class CreditCurrencyService implements BaseCurrencyService
