@@ -49,7 +49,7 @@
     "tourze/json-rpc-paginator-bundle": "0.0.*",
     "tourze/lock-service-bundle": "0.1.*",
     "tourze/resource-manage-bundle": "0.1.*",
-    "tourze/symfony-async-bundle": "0.0.*",
+    "tourze/symfony-aop-async-bundle": "0.0.*",
     "tourze/symfony-snowflake-bundle": "0.0.*"
   },
   "require-dev": {

@@ -5,7 +5,7 @@ namespace CreditBundle\Service;
 use CreditBundle\Entity\Account;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Tourze\SnowflakeBundle\Service\Snowflake;
-use Tourze\Symfony\Async\Attribute\Async;
+use Tourze\Symfony\AopAsyncBundle\Attribute\Async;
 
 /**
  * 交易服务（基于Account）
