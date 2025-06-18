@@ -13,55 +13,34 @@ use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
-use Tourze\EasyAdmin\Attribute\Action\Creatable;
-use Tourze\EasyAdmin\Attribute\Action\Editable;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Field\FormField;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 
-#[AsPermission(title: '积分调整请求')]
-#[Editable]
-#[Creatable]
 #[ORM\Entity(repositoryClass: AdjustRequestRepository::class)]
 #[ORM\Table(name: 'credit_adjust_request', options: ['comment' => '积分调整请求'])]
 class AdjustRequest implements AdminArrayInterface
 {
     use TimestampableAware;
-    #[ExportColumn]
-    #[ListColumn(order: -1, sorter: true)]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
     #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
     private ?string $id = null;
 
-    #[ListColumn]
-    #[FormField]
     #[ORM\ManyToOne(inversedBy: 'adjustRequests')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Account $account;
 
-    #[ListColumn]
-    #[FormField]
     #[Groups(['restful_read', 'admin_curd', 'recursive_view', 'api_tree'])]
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, options: ['comment' => '变更数值'])]
     private string $amount;
 
-    #[ListColumn]
-    #[FormField]
     #[Groups(['restful_read', 'admin_curd', 'recursive_view', 'api_tree'])]
     #[ORM\Column(type: Types::STRING, length: 30, enumType: AdjustRequestType::class, options: ['comment' => '请求变动类型'])]
     private ?AdjustRequestType $type = null;
 
-    #[ListColumn]
-    #[FormField]
     #[Groups(['restful_read', 'admin_curd', 'recursive_view', 'api_tree'])]
     #[ORM\Column(type: Types::INTEGER, length: 30, enumType: AdjustRequestStatus::class, options: ['comment' => '状态'])]
     private ?AdjustRequestStatus $status = null;
 
-    #[ListColumn]
-    #[FormField]
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '备注'])]
     private ?string $remark = null;
 

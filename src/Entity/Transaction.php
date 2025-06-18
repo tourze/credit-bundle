@@ -15,11 +15,7 @@ use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 
-#[AsPermission(title: '交易流水')]
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
 #[ORM\Table(name: 'ims_credit_account_transaction', options: ['comment' => '交易流水'])]
 #[ORM\UniqueConstraint(name: 'ims_credit_account_transaction_idx_uniq', columns: ['event_no', 'account_id'])]
@@ -28,8 +24,6 @@ use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 class Transaction implements AdminArrayInterface, BenefitResource
 {
     use TimestampableAware;
-    #[ExportColumn]
-    #[ListColumn(order: -1, sorter: true)]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
@@ -43,12 +37,10 @@ class Transaction implements AdminArrayInterface, BenefitResource
     #[ORM\Column(length: 50, options: ['comment' => '事件编号'])]
     private string $eventNo;
 
-    #[ListColumn(title: '用户')]
     #[ORM\ManyToOne(inversedBy: 'transactions')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private Account $account;
 
-    #[ListColumn]
     #[IndexColumn]
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, options: ['comment' => '变动流水'])]
     private string $amount;
@@ -57,7 +49,6 @@ class Transaction implements AdminArrayInterface, BenefitResource
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '余额'])]
     private ?string $balance = null;
 
-    #[ListColumn]
     #[ORM\Column(length: 100, nullable: true, options: ['comment' => '备注'])]
     private ?string $remark = null;
 
@@ -76,7 +67,6 @@ class Transaction implements AdminArrayInterface, BenefitResource
     private ?Currency $currency = null;
 
     #[IndexColumn]
-    #[ListColumn]
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '过期时间'])]
     private ?\DateTimeInterface $expireTime = null;
 
@@ -94,7 +84,6 @@ class Transaction implements AdminArrayInterface, BenefitResource
     #[ORM\OneToMany(mappedBy: 'consumeTransaction', targetEntity: ConsumeLog::class)]
     private Collection $consumeLogs;
 
-    #[ListColumn(order: 99)]
     #[CreateIpColumn]
     #[ORM\Column(length: 45, nullable: true, options: ['comment' => '创建时IP'])]
     private ?string $createdFromIp = null;

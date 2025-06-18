@@ -15,15 +15,7 @@ use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
 use Tourze\EasyAdmin\Attribute\Action\BatchDeletable;
-use Tourze\EasyAdmin\Attribute\Action\Creatable;
-use Tourze\EasyAdmin\Attribute\Action\Deletable;
-use Tourze\EasyAdmin\Attribute\Action\Editable;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Field\FormField;
 use Tourze\EasyAdmin\Attribute\Filter\Filterable;
-use Tourze\EasyAdmin\Attribute\Filter\Keyword;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 use Tourze\EnumExtra\Itemable;
 use Tourze\LockServiceBundle\Model\LockEntity;
 
@@ -36,10 +28,6 @@ use Tourze\LockServiceBundle\Model\LockEntity;
  *
  * @see https://www.financialnews.com.cn/gc/gz/202107/t20210728_224526.html
  */
-#[AsPermission(title: '账户')]
-#[Deletable]
-#[Editable]
-#[Creatable]
 #[BatchDeletable]
 #[ORM\Entity(repositoryClass: AccountRepository::class)]
 #[ORM\Table(name: 'credit_account', options: ['comment' => '账户'])]
@@ -47,22 +35,15 @@ use Tourze\LockServiceBundle\Model\LockEntity;
 class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
 {
     use TimestampableAware;
-    #[ListColumn(order: -1)]
-    #[ExportColumn]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]
     private ?int $id = 0;
 
-    #[FormField(span: 18)]
-    #[Keyword]
-    #[ListColumn]
     #[ORM\Column(type: Types::STRING, length: 120, unique: true, options: ['comment' => '名称'])]
     private string $name;
 
-    #[FormField(title: '币种', span: 6)]
     #[Filterable(label: '币种', inputWidth: 160)]
-    #[ListColumn(title: '币种')]
     #[ORM\JoinColumn(nullable: false)]
     #[ORM\ManyToOne(targetEntity: Currency::class, fetch: 'EXTRA_LAZY')]
     private Currency $currency;
@@ -71,8 +52,6 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
      * 账户不一定跟用户关联的，但为了简化设计，我们还是约束一下
      * 一般来讲，一个用户一个币种应该是唯一的.
      */
-    #[FormField(title: '关联用户')]
-    #[ListColumn(title: '关联用户')]
     #[ORM\ManyToOne(targetEntity: UserInterface::class)]
     #[ORM\JoinColumn(onDelete: 'CASCADE')]
     private ?UserInterface $user = null;
@@ -80,12 +59,9 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
     /**
      * @var Collection<Limit>
      */
-    #[FormField(title: '交易限制')]
-    #[ListColumn(title: '交易限制')]
     #[ORM\OneToMany(mappedBy: 'account', targetEntity: Limit::class, cascade: ['persist'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $limits;
 
-    #[ListColumn]
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '期末余额'])]
     private ?string $endingBalance = null;
 

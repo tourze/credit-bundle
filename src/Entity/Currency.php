@@ -17,59 +17,33 @@ use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineTrackBundle\Attribute\TrackColumn;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
-use Tourze\EasyAdmin\Attribute\Action\Creatable;
-use Tourze\EasyAdmin\Attribute\Action\Deletable;
-use Tourze\EasyAdmin\Attribute\Action\Editable;
-use Tourze\EasyAdmin\Attribute\Column\BoolColumn;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Field\FormField;
-use Tourze\EasyAdmin\Attribute\Filter\Keyword;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 use Tourze\ResourceManageBundle\Model\ResourceIdentity;
 
-#[AsPermission(title: '积分配置')]
-#[Deletable]
-#[Editable]
-#[Creatable]
 #[ORM\Entity(repositoryClass: CurrencyRepository::class)]
 #[ORM\Table(name: 'credit_point', options: ['comment' => '积分配置'])]
 class Currency implements \Stringable, AdminArrayInterface, ResourceIdentity
 {
     use TimestampableAware;
-    #[ListColumn(order: -1)]
-    #[ExportColumn]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]
     private ?int $id = 0;
 
     #[TrackColumn]
-    #[FormField(span: 12)]
-    #[Keyword]
-    #[ListColumn]
     #[ORM\Column(type: Types::STRING, length: 20, unique: true, options: ['comment' => '代码'])]
     private string $currency;
 
     #[TrackColumn]
-    #[FormField(span: 12)]
-    #[Keyword]
-    #[ListColumn]
     #[ORM\Column(type: Types::STRING, length: 40, unique: true, options: ['comment' => '名称'])]
     private string $name;
 
-    #[BoolColumn]
     #[IndexColumn]
     #[TrackColumn]
     #[Groups(['admin_curd', 'restful_read', 'restful_read', 'restful_write'])]
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['comment' => '首选币种', 'default' => 0])]
-    #[ListColumn(order: 96)]
-    #[FormField(order: 96)]
     private ?bool $main = null;
 
     #[TrackColumn]
-    #[FormField]
-    #[ListColumn]
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '备注'])]
     private ?string $remark = null;
 
@@ -80,12 +54,9 @@ class Currency implements \Stringable, AdminArrayInterface, ResourceIdentity
     #[ORM\OneToMany(mappedBy: 'currency', targetEntity: Transaction::class)]
     private Collection $transactions;
 
-    #[BoolColumn]
     #[IndexColumn]
     #[TrackColumn]
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['comment' => '有效', 'default' => 0])]
-    #[ListColumn(order: 97)]
-    #[FormField(order: 97)]
     private ?bool $valid = false;
 
     #[CreatedByColumn]

@@ -12,26 +12,13 @@ use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
-use Tourze\EasyAdmin\Attribute\Action\Creatable;
-use Tourze\EasyAdmin\Attribute\Action\Deletable;
-use Tourze\EasyAdmin\Attribute\Action\Editable;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Field\FormField;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 
-#[AsPermission(title: '配额限制')]
-#[Deletable]
-#[Editable]
-#[Creatable]
 #[ORM\Entity]
 #[ORM\Table(name: 'credit_limit', options: ['comment' => '配额限制'])]
 #[ORM\UniqueConstraint(name: 'credit_limit_idx_uniq', columns: ['account_id', 'type'])]
 class Limit implements \Stringable
 {
     use TimestampableAware;
-    #[ExportColumn]
-    #[ListColumn(order: -1, sorter: true)]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
@@ -43,15 +30,12 @@ class Limit implements \Stringable
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Account $account = null;
 
-    #[FormField(span: 8)]
     #[ORM\Column(type: Types::STRING, length: 30, enumType: LimitType::class, options: ['comment' => '类型'])]
     private ?LimitType $type = null;
 
-    #[FormField(span: 7)]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '限制数量'])]
     private ?int $value = null;
 
-    #[FormField(span: 9)]
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '备注'])]
     private ?string $remark = null;
 

@@ -13,59 +13,38 @@ use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
-use Tourze\EasyAdmin\Attribute\Column\ExportColumn;
-use Tourze\EasyAdmin\Attribute\Column\ListColumn;
-use Tourze\EasyAdmin\Attribute\Field\FormField;
-use Tourze\EasyAdmin\Attribute\Filter\Keyword;
-use Tourze\EasyAdmin\Attribute\Permission\AsPermission;
 
-#[AsPermission(title: '交易流水（旧）', titleOverrideEnv: 'PAGE_TITLE_TRANSFER_LOG')]
 #[ORM\Entity(repositoryClass: TransferLogRepository::class)]
 #[ORM\Table(name: 'credit_transaction', options: ['comment' => '交易流水（旧）'])]
 class TransferLog
 {
     use TimestampableAware;
-    #[ExportColumn]
-    #[ListColumn(order: -1, sorter: true)]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
     #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
     private ?string $id = null;
 
-    #[FormField(span: 6)]
-    #[ListColumn]
     #[ORM\Column(type: Types::STRING, length: 20, options: ['comment' => '币种'])]
     private ?string $currency = null;
 
-    #[FormField(title: '转出账户', span: 12)]
-    #[ListColumn(title: '转出账户')]
     #[ORM\ManyToOne(targetEntity: Account::class, fetch: 'EXTRA_LAZY')]
     #[ORM\JoinColumn(onDelete: 'CASCADE')]
     private ?Account $outAccount = null;
 
-    #[FormField(span: 6)]
     #[Groups(['restful_read'])]
-    #[ListColumn]
     #[ORM\Column(type: Types::DECIMAL, precision: 20, scale: 6, options: ['comment' => '转出金额'])]
     private ?string $outAmount = null;
 
-    #[FormField(title: '转入账户', span: 12)]
-    #[ListColumn(title: '转入账户')]
     #[ORM\ManyToOne(targetEntity: Account::class, fetch: 'EXTRA_LAZY')]
     #[ORM\JoinColumn(onDelete: 'CASCADE')]
     private ?Account $inAccount = null;
 
-    #[FormField(span: 6)]
     #[Groups(['restful_read'])]
-    #[ListColumn]
     #[ORM\Column(type: Types::DECIMAL, precision: 20, scale: 6, options: ['comment' => '转入金额'])]
     private ?string $inAmount = null;
 
     #[Groups(['restful_read'])]
-    #[FormField]
-    #[Keyword]
-    #[ListColumn]
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true, options: ['comment' => '备注'])]
     private ?string $remark = null;
 
