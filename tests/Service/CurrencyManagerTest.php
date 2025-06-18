@@ -32,8 +32,6 @@ class CurrencyManagerTest extends TestCase
             ->willReturn([$this->cnyCurrency]);
 
         $result = $this->currencyManager->genSelectData();
-
-        $this->assertIsArray($result);
         $this->assertCount(1, $result);
         $this->assertEquals([
             'label' => '元',
