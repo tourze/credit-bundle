@@ -14,7 +14,6 @@ use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
 use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
-use Tourze\EasyAdmin\Attribute\Action\BatchDeletable;
 use Tourze\EasyAdmin\Attribute\Filter\Filterable;
 use Tourze\EnumExtra\Itemable;
 use Tourze\LockServiceBundle\Model\LockEntity;
@@ -28,7 +27,6 @@ use Tourze\LockServiceBundle\Model\LockEntity;
  *
  * @see https://www.financialnews.com.cn/gc/gz/202107/t20210728_224526.html
  */
-#[BatchDeletable]
 #[ORM\Entity(repositoryClass: AccountRepository::class)]
 #[ORM\Table(name: 'credit_account', options: ['comment' => '账户'])]
 #[ORM\UniqueConstraint(name: 'credit_account_idx_uniq', columns: ['name', 'currency_id', 'user_id'])]
