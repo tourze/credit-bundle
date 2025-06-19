@@ -5,13 +5,14 @@ namespace CreditBundle\Entity;
 use CreditBundle\Repository\TransferErrorLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
-use Tourze\DoctrineTimestampBundle\Attribute\CreateTimeColumn;
+use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 
 #[ORM\Entity(repositoryClass: TransferErrorLogRepository::class, readOnly: true)]
 #[ORM\Table(name: 'ims_credit_transfer_error_log', options: ['comment' => '转账出错日志'])]
 class TransferErrorLog
 {
+    use CreateTimeAware;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]
@@ -40,11 +41,6 @@ class TransferErrorLog
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '异常'])]
     private ?string $exception = null;
-
-    #[IndexColumn]
-    #[CreateTimeColumn]
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '创建时间'])]
-    private ?\DateTimeInterface $createTime = null;
 
     public function getContext(): ?array
     {
@@ -145,17 +141,5 @@ class TransferErrorLog
         $this->exception = $exception;
 
         return $this;
-    }
-
-    public function setCreateTime(?\DateTimeInterface $createdAt): self
-    {
-        $this->createTime = $createdAt;
-
-        return $this;
-    }
-
-    public function getCreateTime(): ?\DateTimeInterface
-    {
-        return $this->createTime;
     }
 }
