@@ -12,9 +12,7 @@ use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
-use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
-use Tourze\EasyAdmin\Attribute\Filter\Filterable;
+use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 use Tourze\EnumExtra\Itemable;
 use Tourze\LockServiceBundle\Model\LockEntity;
 
@@ -33,6 +31,7 @@ use Tourze\LockServiceBundle\Model\LockEntity;
 class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
 {
     use TimestampableAware;
+    use BlameableAware;
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]
@@ -41,7 +40,6 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
     #[ORM\Column(type: Types::STRING, length: 120, unique: true, options: ['comment' => '名称'])]
     private string $name;
 
-    #[Filterable(label: '币种', inputWidth: 160)]
     #[ORM\JoinColumn(nullable: false)]
     #[ORM\ManyToOne(targetEntity: Currency::class, fetch: 'EXTRA_LAZY')]
     private Currency $currency;
@@ -84,13 +82,6 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '过期发生额'])]
     private ?string $expiredAmount = null;
 
-    #[CreatedByColumn]
-    #[ORM\Column(nullable: true, options: ['comment' => '创建人'])]
-    private ?string $createdBy = null;
-
-    #[UpdatedByColumn]
-    #[ORM\Column(nullable: true, options: ['comment' => '更新人'])]
-    private ?string $updatedBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(length: 128, nullable: true, options: ['comment' => '创建时IP'])]
@@ -109,12 +100,12 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         $this->setEndingBalance(0);
         $this->setIncreasedAmount(0);
         $this->setDecreasedAmount(0);
-        $this->setExpiredAmount(0);
+        $this->setExpiredAmount('0');
     }
 
     public function __toString(): string
     {
-        if (!$this->getId()) {
+        if ($this->getId() === null || $this->getId() === 0) {
             return '';
         }
 
@@ -235,9 +226,8 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
     {
         if ($this->adjustRequests->removeElement($adjustRequests)) {
             // set the owning side to null (unless already changed)
-            if ($adjustRequests->getAccount() === $this) {
-                $adjustRequests->setAccount(null);
-            }
+            // set the owning side to null (unless already changed)
+            // Note: We cannot set null on a required relationship
         }
 
         return $this;
@@ -265,9 +255,8 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
     {
         if ($this->transactions->removeElement($transaction)) {
             // set the owning side to null (unless already changed)
-            if ($transaction->getAccount() === $this) {
-                $transaction->setAccount(null);
-            }
+            // set the owning side to null (unless already changed)
+            // Note: We cannot set null on a required relationship
         }
 
         return $this;
@@ -302,35 +291,11 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->expiredAmount;
     }
 
-    public function setExpiredAmount(?string $expiredAmount): static
+    public function setExpiredAmount(string|float|null $expiredAmount): static
     {
         $this->expiredAmount = $expiredAmount;
 
         return $this;
-    }
-
-    public function setCreatedBy(?string $createdBy): self
-    {
-        $this->createdBy = $createdBy;
-
-        return $this;
-    }
-
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setUpdatedBy(?string $updatedBy): self
-    {
-        $this->updatedBy = $updatedBy;
-
-        return $this;
-    }
-
-    public function getUpdatedBy(): ?string
-    {
-        return $this->updatedBy;
     }
 
     public function setCreatedFromIp(?string $createdFromIp): self

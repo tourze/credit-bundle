@@ -50,8 +50,8 @@ class CreditIncreaseService
             $transaction->setCurrency($account->getCurrency());
             $transaction->setEventNo($eventNo);
             $transaction->setAccount($account);
-            $transaction->setAmount(abs($amount));
-            $transaction->setBalance(abs($amount));
+            $transaction->setAmount((string)abs($amount));
+            $transaction->setBalance((string)abs($amount));
             $transaction->setRemark($remark);
             $transaction->setRelationModel($relationModel);
             $transaction->setRelationId($relationId);
@@ -59,8 +59,8 @@ class CreditIncreaseService
             $transaction->setExpireTime($expireTime);
             $this->entityManager->persist($transaction);
 
-            $account->setEndingBalance($account->getEndingBalance() + $amount);
-            $account->setIncreasedAmount($account->getIncreasedAmount() + $amount);
+            $account->setEndingBalance((string)((float)$account->getEndingBalance() + $amount));
+            $account->setIncreasedAmount((string)((float)$account->getIncreasedAmount() + $amount));
             $this->entityManager->persist($account);
 
             $this->entityManager->flush();

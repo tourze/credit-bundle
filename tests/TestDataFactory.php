@@ -72,8 +72,8 @@ class TestDataFactory
 
         $transaction->setAccount($account);
         $transaction->setCurrency($account->getCurrency());
-        $transaction->setAmount($amount);
-        $transaction->setBalance($amount);
+        $transaction->setAmount((string)$amount);
+        $transaction->setBalance((string)$amount);
         $transaction->setRemark($remark);
 
         if ($expireTime !== null) {
@@ -107,13 +107,7 @@ class TestDataFactory
         $limit->setType($type ?? LimitType::DAILY_IN_LIMIT);
         $limit->setValue((int)$value);
 
-        if ($startTime !== null) {
-            $limit->setStartTime($startTime);
-        }
-
-        if ($endTime !== null) {
-            $limit->setEndTime($endTime);
-        }
+        // Limit 实体不包含 startTime 和 endTime 字段
 
         // 使用反射设置ID
         self::setEntityId($limit, 1);

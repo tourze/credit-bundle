@@ -28,7 +28,7 @@ class TransactionService
         $eventNo = 'S' . $this->snowflake->id();
 
         // 转出
-        if ($fromAccount->getUser()) {
+        if ($fromAccount->getUser() !== null) {
             $this->decreaseService->decrease(
                 $eventNo,
                 $fromAccount,
@@ -39,7 +39,7 @@ class TransactionService
         }
 
         // 转入
-        if ($toAccount->getUser()) {
+        if ($toAccount->getUser() !== null) {
             $this->increaseService->increase(
                 $eventNo,
                 $toAccount,

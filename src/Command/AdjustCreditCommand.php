@@ -2,20 +2,21 @@
 
 namespace CreditBundle\Command;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use CreditBundle\Entity\Account;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Doctrine\ORM\EntityManagerInterface;
 
-#[AsCommand(name: 'credit:adjust', description: '通过流水调整积分')]
+#[AsCommand(name: self::NAME, description: '通过流水调整积分')]
 class AdjustCreditCommand extends Command
 {
+    public const NAME = 'credit:adjust';
     public function __construct(
         private readonly AccountRepository $accountRepository,
         private readonly TransactionRepository $transactionRepository,
@@ -29,13 +30,16 @@ class AdjustCreditCommand extends Command
     {
         $accountIterator = $this->accountRepository->createQueryBuilder('a')
             ->where('a.updateTime > :updateTime')
-            ->setParameter('updateTime', Carbon::now()->subDays())
+            ->setParameter('updateTime', CarbonImmutable::now()->subDays())
             ->getQuery()
             ->toIterable();
 
         /** @var Account $account */
         foreach ($accountIterator as $account) {
-            if ($account->getEndingBalance() == $account->getIncreasedAmount() - $account->getDecreasedAmount()) {
+            $endingBalance = (float) ($account->getEndingBalance() ?? 0);
+            $increasedAmount = (float) ($account->getIncreasedAmount() ?? 0);
+            $decreasedAmount = (float) ($account->getDecreasedAmount() ?? 0);
+            if ($endingBalance == $increasedAmount - $decreasedAmount) {
                 continue;
             }
 

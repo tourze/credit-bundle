@@ -2,7 +2,6 @@
 
 namespace CreditBundle\Service;
 
-use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use CreditBundle\Entity\Account;
 use CreditBundle\Enum\LimitType;
@@ -33,8 +32,8 @@ class TransactionLimitService
             ->select('SUM(a.amount)')
             ->where('a.account=:account AND a.amount > 0 and a.createTime >= :start and a.createTime < :end')
             ->setParameter('account', $account)
-            ->setParameter('start', Carbon::now()->startOfDay())
-            ->setParameter('end', Carbon::now()->endOfDay())
+            ->setParameter('start', CarbonImmutable::now()->startOfDay())
+            ->setParameter('end', CarbonImmutable::now()->endOfDay())
             ->getQuery()
             ->getSingleScalarResult();
         if (($s + $amount) > $dayLimit) {
@@ -48,8 +47,8 @@ class TransactionLimitService
                 ->select('SUM(a.amount)')
                 ->where('a.account=:account AND a.amount > 0 and a.createTime >= :start and a.createTime < :end')
                 ->setParameter('account', $account)
-                ->setParameter('start', Carbon::now()->startOfMonth())
-                ->setParameter('end', Carbon::now()->endOfMonth())
+                ->setParameter('start', CarbonImmutable::now()->startOfMonth())
+                ->setParameter('end', CarbonImmutable::now()->endOfMonth())
                 ->getQuery()
                 ->getSingleScalarResult();
             if (($s + $amount) > $monthLimit) {

@@ -2,11 +2,10 @@
 
 namespace CreditBundle\Procedure;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
-use CreditBundle\Service\AccountService;
 use CreditBundle\Service\CurrencyManager;
 use Doctrine\Common\Collections\Criteria;
 use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
@@ -37,7 +36,6 @@ class GetCreditTransactionsByBizUserId extends CacheableProcedure
 
     public function __construct(
         private readonly TransactionRepository $transactionRepository,
-        private readonly AccountService $accountService,
         private readonly AccountRepository $accountRepository,
         private readonly CurrencyManager $currencyManager,
         private readonly UserLoaderInterface $userLoader,
@@ -60,13 +58,13 @@ class GetCreditTransactionsByBizUserId extends CacheableProcedure
             ->setParameter('account', $account)
             ->addOrderBy('a.id', Criteria::DESC);
 
-        if ($this->startTime) {
+        if ($this->startTime !== '') {
             $qb = $qb->andWhere('a.createTime > :startTime')
-                ->setParameter('startTime', Carbon::parse($this->startTime));
+                ->setParameter('startTime', CarbonImmutable::parse($this->startTime));
         }
-        if ($this->endTime) {
+        if ($this->endTime !== '') {
             $qb = $qb->andWhere('a.createTime < :endTime')
-                ->setParameter('endTime', Carbon::parse($this->endTime));
+                ->setParameter('endTime', CarbonImmutable::parse($this->endTime));
         }
 
         return $this->fetchList($qb, function (Transaction $item) {
@@ -79,14 +77,14 @@ class GetCreditTransactionsByBizUserId extends CacheableProcedure
 
             // 转出
             if ($item->getAmount() < 0) {
-                $tmp['outAmount'] = '-' . abs($this->currencyManager->getPriceNumber($item->getAmount()));
+                $tmp['outAmount'] = '-' . abs((float)$this->currencyManager->getPriceNumber($item->getAmount()));
                 $tmp['type'] = 'out';
             }
 
             // 转入
             if ($item->getAmount() > 0) {
                 // 当前总积分 = 转入金额 - 消耗情况
-                $tmp['inAmount'] = '+' . abs($this->currencyManager->getPriceNumber($item->getAmount()));
+                $tmp['inAmount'] = '+' . abs((float)$this->currencyManager->getPriceNumber($item->getAmount()));
                 $tmp['type'] = 'in';
             }
 
@@ -97,7 +95,7 @@ class GetCreditTransactionsByBizUserId extends CacheableProcedure
     public function getCacheKey(JsonRpcRequest $request): string
     {
         $key = static::buildParamCacheKey($request->getParams());
-        if ($request->getParams()->get('userId')) {
+        if ($request->getParams()->get('userId') !== null) {
             $key .= '-' . $request->getParams()->get('userId');
         }
 

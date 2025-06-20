@@ -29,11 +29,11 @@ class ConsumeLogService
         $consumeLog = new ConsumeLog();
         $consumeLog->setCostTransaction($record);
         $consumeLog->setConsumeTransaction($transaction);
-        $consumeLog->setAmount($costPer);
+        $consumeLog->setAmount((string)$costPer);
         $this->entityManager->persist($consumeLog);
 
         // 更新数据
-        $record->setBalance($record->getBalance() - $costPer);
+        $record->setBalance((string)((float)$record->getBalance() - $costPer));
         $this->entityManager->persist($record);
 
         $this->entityManager->flush();

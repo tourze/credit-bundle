@@ -2,7 +2,7 @@
 
 namespace CreditBundle\Command;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Model\TransactionParticipant;
 use CreditBundle\Repository\AccountRepository;
@@ -16,7 +16,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Tourze\SnowflakeBundle\Service\Snowflake;
 
-#[AsCommand(name: CalcExpireTransactionCommand::NAME, description: '计算过期积分')]
+#[AsCommand(name: self::NAME, description: '计算过期积分')]
 class CalcExpireTransactionCommand extends Command
 {
     public const NAME = 'credit:calc:expire-transaction';
@@ -39,7 +39,7 @@ class CalcExpireTransactionCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $account = $this->accountRepository->find($input->getArgument('accountId'));
-        if (!$account) {
+        if ($account === null) {
             return Command::INVALID;
         }
 
@@ -51,7 +51,7 @@ class CalcExpireTransactionCommand extends Command
             ->andWhere('a.expireTime IS NOT NULL')
             ->andWhere('a.expireTime <= :now')
             ->setParameter('account', $account)
-            ->setParameter('now', Carbon::now())
+            ->setParameter('now', CarbonImmutable::now())
             ->orderBy('a.id', Criteria::ASC)
             ->getQuery()
             ->getResult();

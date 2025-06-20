@@ -10,9 +10,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * TODO 发送欠费提醒
  */
-#[AsCommand(name: 'credit:send-notice', description: '发送欠费提醒')]
+#[AsCommand(name: self::NAME, description: '发送欠费提醒')]
 class SendNoticeCommand extends Command
 {
+    public const NAME = 'credit:send-notice';
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         return Command::SUCCESS;

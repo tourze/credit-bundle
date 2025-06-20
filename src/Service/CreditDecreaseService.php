@@ -116,7 +116,7 @@ class CreditDecreaseService
      * 验证用户积分是否充足
      */
     private function validateUserCredit(Account $account): void {
-        if ($account->getUser()) {
+        if ($account->getUser() !== null) {
             $validAmount = $this->accountService->getValidAmount($account);
             if ($validAmount <= 0) {
                 throw new \RuntimeException($account . ' 积分不足');
@@ -182,7 +182,7 @@ class CreditDecreaseService
         $transaction->setCurrency($account->getCurrency());
         $transaction->setEventNo($eventNo);
         $transaction->setAccount($account);
-        $transaction->setAmount(-$costAmount);
+        $transaction->setAmount((string)(-$costAmount));
         $transaction->setRemark($remark);
         $transaction->setRelationModel($relationModel);
         $transaction->setRelationId($relationId);
@@ -196,10 +196,10 @@ class CreditDecreaseService
      * 更新账户余额
      */
     private function updateAccountBalance(Account $account, float $costAmount, bool $isExpired): void {
-        $account->setEndingBalance($account->getEndingBalance() - $costAmount);
-        $account->setDecreasedAmount($account->getDecreasedAmount() + $costAmount);
+        $account->setEndingBalance((string)((float)$account->getEndingBalance() - $costAmount));
+        $account->setDecreasedAmount((string)((float)$account->getDecreasedAmount() + $costAmount));
         if ($isExpired) {
-            $account->setExpiredAmount($account->getExpiredAmount() + $costAmount);
+            $account->setExpiredAmount((string)((float)$account->getExpiredAmount() + $costAmount));
         }
         $this->entityManager->persist($account);
     }
@@ -210,7 +210,7 @@ class CreditDecreaseService
     private function findOriginalTransaction(string $eventNo, Account $account, float $amount): Transaction
     {
         $oldTransaction = $this->transactionRepository->findOneBy(['eventNo' => $eventNo, 'account' => $account]);
-        if (!$oldTransaction) {
+        if ($oldTransaction === null) {
             throw new ApiException('未查询到对应事件积分');
         }
 
@@ -247,7 +247,7 @@ class CreditDecreaseService
                 $this->entityManager->flush();
 
                 // 记录消费日志
-                $this->consumeLogService->saveConsumeLog($oldTransaction, $transaction, $oldTransaction->getBalance());
+                $this->consumeLogService->saveConsumeLog($oldTransaction, $transaction, (float)$oldTransaction->getBalance());
             });
         });
     }
@@ -268,7 +268,7 @@ class CreditDecreaseService
         $transaction->setCurrency($account->getCurrency());
         $transaction->setEventNo("{$eventNo}_rollback");
         $transaction->setAccount($account);
-        $transaction->setAmount($costAmount);
+        $transaction->setAmount((string)$costAmount);
         $transaction->setRemark($remark);
         $transaction->setRelationModel($relationModel);
         $transaction->setRelationId($relationId);
@@ -282,8 +282,8 @@ class CreditDecreaseService
      * 更新回滚账户余额
      */
     private function updateRollbackAccountBalance(Account $account, float $costAmount): void {
-        $account->setEndingBalance($account->getEndingBalance() - $costAmount);
-        $account->setDecreasedAmount($account->getDecreasedAmount() + $costAmount);
+        $account->setEndingBalance((string)((float)$account->getEndingBalance() - $costAmount));
+        $account->setDecreasedAmount((string)((float)$account->getDecreasedAmount() + $costAmount));
         $this->entityManager->persist($account);
     }
 }

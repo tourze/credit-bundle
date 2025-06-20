@@ -43,7 +43,7 @@ class AccountService
             'user' => $user,
             'currency' => $currency,
         ]);
-        if (!$account) {
+        if ($account === null) {
             $account = new Account();
             $account->setUser($user);
             $account->setCurrency($currency);
@@ -65,18 +65,18 @@ class AccountService
             'name' => $name,
             'currency' => $currency,
         ];
-        if ($user) {
+        if ($user !== null) {
             $condition['user'] = $user;
         }
 
         // 先尝试查找账号是否存在
         $account = $this->accountRepository->findOneBy($condition);
-        if ($account) {
+        if ($account !== null) {
             return $account;
         }
 
         // 使用锁确保在并发环境下只有一个进程创建账号
-        $lockName = "account_creation_{$name}_{$currency->getId()}" . ($user ? "_{$user->getId()}" : '');
+        $lockName = "account_creation_{$name}_{$currency->getId()}" . ($user !== null ? "_{$user->getUserIdentifier()}" : '');
         $lockAcquired = $this->lockService->acquireLock($lockName);
 
         if (!$lockAcquired->isAcquired()) {
@@ -87,7 +87,7 @@ class AccountService
             ]);
             // 锁获取失败，再次尝试查找账号（可能已被其他进程创建）
             $account = $this->accountRepository->findOneBy($condition);
-            if (!$account) {
+            if ($account === null) {
                 throw new \RuntimeException('无法创建账号，获取锁失败');
             }
             return $account;
@@ -96,12 +96,12 @@ class AccountService
         try {
             // 获得锁后再次检查账号是否存在（双重检查锁定模式）
             $account = $this->accountRepository->findOneBy($condition);
-            if (!$account) {
+            if ($account === null) {
                 // 创建新账号
                 $account = new Account();
                 $account->setName($name);
                 $account->setCurrency($currency);
-                if ($user) {
+                if ($user !== null) {
                     $account->setUser($user);
                 }
                 $this->entityManager->persist($account);

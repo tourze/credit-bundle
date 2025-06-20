@@ -11,19 +11,22 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 use Tourze\SnowflakeBundle\Service\Snowflake;
 
 /**
  * 读取xls文件并一行行解析后进行积分调整，xls表头有“积分名”“账户名”“变更数值”“变更备注”
  */
-#[AsCommand(name: 'credit:batch-adjust', description: '通过xls文件调整积分')]
+#[AsCommand(name: self::NAME, description: '通过xls文件调整积分')]
 class BatchAdjustCommand extends Command
 {
+    public const NAME = 'credit:batch-adjust';
     public function __construct(
         private readonly TransactionService $transactionService,
         private readonly AccountService $accountService,
         private readonly CurrencyRepository $currencyRepository,
         private readonly Snowflake $snowflake,
+        private readonly KernelInterface $kernel,
     ) {
         parent::__construct();
     }
@@ -36,7 +39,7 @@ class BatchAdjustCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $projectDir = $this->getApplication()->getKernel()->getProjectDir();
+        $projectDir = $this->kernel->getProjectDir();
 
         $filePath = $projectDir . $input->getArgument('xlsFileName');
 
@@ -65,7 +68,7 @@ class BatchAdjustCommand extends Command
                 $rowData[] = $value;
             }
             $currency = $this->currencyRepository->findOneBy(['name' => $rowData[3]]);
-            if (!$currency) {
+            if ($currency === null) {
                 $output->writeln('任务credit:batch-adjust currency数据不存在');
 
                 return Command::FAILURE;

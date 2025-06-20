@@ -2,7 +2,7 @@
 
 namespace CreditBundle\Procedure;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
@@ -54,17 +54,17 @@ class GetUserCreditTransaction extends BaseProcedure
             ->setParameter('account', $account)
             ->addOrderBy('a.id', Criteria::DESC);
 
-        if ($this->startTime) {
+        if ($this->startTime !== '') {
             $qb = $qb->andWhere('a.createTime > :startTime')
-                ->setParameter('startTime', Carbon::parse($this->startTime));
+                ->setParameter('startTime', CarbonImmutable::parse($this->startTime));
         }
-        if ($this->endTime) {
+        if ($this->endTime !== '') {
             $qb = $qb->andWhere('a.createTime < :endTime')
-                ->setParameter('endTime', Carbon::parse($this->endTime));
+                ->setParameter('endTime', CarbonImmutable::parse($this->endTime));
         }
 
         // 转化数据，计算总积分
-        $now = Carbon::now();
+        $now = CarbonImmutable::now();
         $totalCredit = $this->accountService->getValidAmount($account);  // 当前总积分
         $expiringCredit = $this->accountService->getExpiringAmount($account, $now, $now->addDays(30)); // 即将过期积分
         $result = $this->fetchList($qb, function (Transaction $item) {
@@ -81,21 +81,21 @@ class GetUserCreditTransaction extends BaseProcedure
 
             // 转出
             if ($item->getAmount() < 0) {
-                $tmp['outAmount'] = '-' . abs($this->currencyManager->getPriceNumber($item->getAmount()));
+                $tmp['outAmount'] = '-' . abs((float)$this->currencyManager->getPriceNumber($item->getAmount()));
                 $tmp['type'] = 'out';
             }
 
             // 转入
             if ($item->getAmount() > 0) {
                 // 当前总积分 = 转入金额 - 消耗情况
-                $tmp['inAmount'] = '+' . abs($this->currencyManager->getPriceNumber($item->getAmount()));
+                $tmp['inAmount'] = '+' . abs((float)$this->currencyManager->getPriceNumber($item->getAmount()));
                 $tmp['type'] = 'in';
             }
 
             return $tmp;
         });
 
-        if (!$result) {
+        if (empty($result)) {
             throw new ApiException('没有数据');
         }
         $result['total'] = $totalCredit;

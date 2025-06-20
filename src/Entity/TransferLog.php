@@ -11,14 +11,14 @@ use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
 use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
 use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
-use Tourze\DoctrineUserBundle\Attribute\CreatedByColumn;
-use Tourze\DoctrineUserBundle\Attribute\UpdatedByColumn;
+use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 
 #[ORM\Entity(repositoryClass: TransferLogRepository::class)]
 #[ORM\Table(name: 'credit_transaction', options: ['comment' => '交易流水（旧）'])]
-class TransferLog
+class TransferLog implements \Stringable
 {
     use TimestampableAware;
+    use BlameableAware;
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
@@ -59,16 +59,9 @@ class TransferLog
     private ?string $relationModel = null;
 
     #[Groups(['restful_read'])]
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '过期时间'])]
-    private ?\DateTimeInterface $expireTime = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '过期时间'])]
+    private ?\DateTimeImmutable $expireTime = null;
 
-    #[CreatedByColumn]
-    #[ORM\Column(nullable: true, options: ['comment' => '创建人'])]
-    private ?string $createdBy = null;
-
-    #[UpdatedByColumn]
-    #[ORM\Column(nullable: true, options: ['comment' => '更新人'])]
-    private ?string $updatedBy = null;
 
     #[CreateIpColumn]
     #[ORM\Column(length: 128, nullable: true, options: ['comment' => '创建时IP'])]
@@ -155,14 +148,20 @@ class TransferLog
         return $this;
     }
 
-    public function getExpireTime(): ?\DateTimeInterface
+    public function getExpireTime(): ?\DateTimeImmutable
     {
         return $this->expireTime;
     }
 
     public function setExpireTime(?\DateTimeInterface $expireTime): self
     {
-        $this->expireTime = $expireTime;
+        if ($expireTime instanceof \DateTime) {
+            $this->expireTime = \DateTimeImmutable::createFromMutable($expireTime);
+        } elseif ($expireTime instanceof \DateTimeImmutable) {
+            $this->expireTime = $expireTime;
+        } else {
+            $this->expireTime = null;
+        }
 
         return $this;
     }
@@ -187,30 +186,6 @@ class TransferLog
         $this->relationModel = $relationModel;
     }
 
-    public function setCreatedBy(?string $createdBy): self
-    {
-        $this->createdBy = $createdBy;
-
-        return $this;
-    }
-
-    public function getCreatedBy(): ?string
-    {
-        return $this->createdBy;
-    }
-
-    public function setUpdatedBy(?string $updatedBy): self
-    {
-        $this->updatedBy = $updatedBy;
-
-        return $this;
-    }
-
-    public function getUpdatedBy(): ?string
-    {
-        return $this->updatedBy;
-    }
-
     public function setCreatedFromIp(?string $createdFromIp): self
     {
         $this->createdFromIp = $createdFromIp;
@@ -233,4 +208,10 @@ class TransferLog
     public function getUpdatedFromIp(): ?string
     {
         return $this->updatedFromIp;
-    }}
+    }
+
+    public function __toString(): string
+    {
+        return "TransferLog #{$this->getId()} - {$this->getCurrency()} Out: {$this->getOutAmount()} In: {$this->getInAmount()}";
+    }
+}

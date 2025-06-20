@@ -108,7 +108,8 @@ class TransactionTest extends AbstractTestCase
 
         $transaction->setExpireTime($expireTime);
 
-        $this->assertSame($expireTime, $transaction->getExpireTime());
+        // 由于 setExpireTime 会将 DateTime 转换为 DateTimeImmutable，因此检查时间戳相等
+        $this->assertEquals($expireTime->getTimestamp(), $transaction->getExpireTime()->getTimestamp());
     }
 
     /**

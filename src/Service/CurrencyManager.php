@@ -19,7 +19,7 @@ class CurrencyManager implements SelectDataFetcher
     ) {
     }
 
-    public function genSelectData(): array
+    public function genSelectData(): iterable
     {
         $arr = [];
         foreach ($this->currencyService->getCurrencies() as $item) {
@@ -52,7 +52,7 @@ class CurrencyManager implements SelectDataFetcher
     {
         $currency = $this->getCurrencyByCode($code);
 
-        return $currency ? $currency->getName() : $code;
+        return $currency !== null ? $currency->getName() : $code;
     }
 
     /**

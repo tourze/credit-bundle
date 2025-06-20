@@ -160,7 +160,8 @@ class CreditIncreaseServiceTest extends AbstractTestCase
         $this->assertEquals($amount, $capturedTransaction->getAmount());
         $this->assertEquals($amount, $capturedTransaction->getBalance());
         $this->assertEquals($remark, $capturedTransaction->getRemark());
-        $this->assertSame($expireTime, $capturedTransaction->getExpireTime());
+        // 由于 setExpireTime 会将 DateTime 转换为 DateTimeImmutable，因此检查时间戳相等
+        $this->assertEquals($expireTime->getTimestamp(), $capturedTransaction->getExpireTime()->getTimestamp());
         $this->assertEquals($relationModel, $capturedTransaction->getRelationModel());
         $this->assertEquals($relationId, $capturedTransaction->getRelationId());
         $this->assertEquals($context, $capturedTransaction->getContext());

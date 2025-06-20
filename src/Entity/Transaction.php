@@ -21,7 +21,7 @@ use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 #[ORM\UniqueConstraint(name: 'ims_credit_account_transaction_idx_uniq', columns: ['event_no', 'account_id'])]
 #[ORM\Index(columns: ['account_id', 'amount', 'balance', 'expire_time'], name: 'ims_credit_transaction_fifo_idx')]
 #[ORM\Index(columns: ['account_id', 'balance'], name: 'ims_credit_transaction_balance_idx')]
-class Transaction implements AdminArrayInterface, BenefitResource
+class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
 {
     use TimestampableAware;
     #[ORM\Id]
@@ -67,8 +67,8 @@ class Transaction implements AdminArrayInterface, BenefitResource
     private ?Currency $currency = null;
 
     #[IndexColumn]
-    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true, options: ['comment' => '过期时间'])]
-    private ?\DateTimeInterface $expireTime = null;
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '过期时间'])]
+    private ?\DateTimeImmutable $expireTime = null;
 
     /**
      * @var Collection<int, ConsumeLog> 当是支出流水时，我们需要记录具体是那一笔收入进行了支出扣减
@@ -202,7 +202,7 @@ class Transaction implements AdminArrayInterface, BenefitResource
             'amount' => $this->getAmount(),
             'remark' => $this->getRemark(),
             'currency' => $this->getCurrency()->retrieveAdminArray(),
-            'bizUser' => $this->getAccount()->getUser()?->retrieveAdminArray(),
+            'bizUser' => [],
         ];
     }
 
@@ -218,14 +218,20 @@ class Transaction implements AdminArrayInterface, BenefitResource
         return $this;
     }
 
-    public function getExpireTime(): ?\DateTimeInterface
+    public function getExpireTime(): ?\DateTimeImmutable
     {
         return $this->expireTime;
     }
 
     public function setExpireTime(?\DateTimeInterface $expireTime): static
     {
-        $this->expireTime = $expireTime;
+        if ($expireTime instanceof \DateTime) {
+            $this->expireTime = \DateTimeImmutable::createFromMutable($expireTime);
+        } elseif ($expireTime instanceof \DateTimeImmutable) {
+            $this->expireTime = $expireTime;
+        } else {
+            $this->expireTime = null;
+        }
 
         return $this;
     }
@@ -298,4 +304,10 @@ class Transaction implements AdminArrayInterface, BenefitResource
     public function setCreatedFromIp(?string $createdFromIp): void
     {
         $this->createdFromIp = $createdFromIp;
-    }}
+    }
+
+    public function __toString(): string
+    {
+        return "Transaction #{$this->getId()} - {$this->getAmount()} {$this->getCurrency()}";
+    }
+}

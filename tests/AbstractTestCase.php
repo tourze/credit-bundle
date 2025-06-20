@@ -23,7 +23,7 @@ abstract class AbstractTestCase extends TestCase
      */
     protected function generateRandomAmount(float $min = 0.01, float $max = 1000): float
     {
-        return round(mt_rand($min * 100, $max * 100) / 100, 2);
+        return round(mt_rand((int)($min * 100), (int)($max * 100)) / 100, 2);
     }
 
     /**

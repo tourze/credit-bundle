@@ -33,7 +33,7 @@ class CreditCurrencyService implements BaseCurrencyService
     public function findByCode(string $currency): ?Currency
     {
         $point = $this->pointRepository->findOneBy(['currency' => $currency]);
-        if ($point) {
+        if ($point !== null) {
             return new Currency($point->getCurrency(), 0, $point->getName(), 2);
         }
 

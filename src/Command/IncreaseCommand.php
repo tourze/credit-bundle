@@ -13,9 +13,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Tourze\SnowflakeBundle\Service\Snowflake;
 
-#[AsCommand(name: 'credit:increase', description: '增加积分')]
+#[AsCommand(name: self::NAME, description: '增加积分')]
 class IncreaseCommand extends Command
 {
+    public const NAME = 'credit:increase';
     public function __construct(
         private readonly UserLoaderInterface $userLoader,
         private readonly AccountService $accountService,

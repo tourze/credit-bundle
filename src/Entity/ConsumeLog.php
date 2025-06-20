@@ -12,7 +12,7 @@ use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 #[ORM\Entity(repositoryClass: ConsumeLogRepository::class)]
 #[ORM\Table(name: 'ims_credit_consume_log', options: ['comment' => '积分消耗明细'])]
 #[ORM\UniqueConstraint(name: 'credit_consume_log_idx_uniq', columns: ['cost_transaction_id', 'consume_transaction_id'])]
-class ConsumeLog
+class ConsumeLog implements \Stringable
 {
     use CreateTimeAware;
 
@@ -36,7 +36,7 @@ class ConsumeLog
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Transaction $consumeTransaction = null;
 
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, options: ['comment' => '消耗金额'])]
     private ?string $amount = null;
 
     #[CreateIpColumn]
@@ -94,5 +94,10 @@ class ConsumeLog
     public function getCreatedFromIp(): ?string
     {
         return $this->createdFromIp;
+    }
+
+    public function __toString(): string
+    {
+        return "ConsumeLog #{$this->getId()} - Amount: {$this->getAmount()}";
     }
 }

@@ -9,7 +9,7 @@ use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 
 #[ORM\Entity(repositoryClass: TransferErrorLogRepository::class, readOnly: true)]
 #[ORM\Table(name: 'ims_credit_transfer_error_log', options: ['comment' => '转账出错日志'])]
-class TransferErrorLog
+class TransferErrorLog implements \Stringable
 {
     use CreateTimeAware;
 
@@ -141,5 +141,10 @@ class TransferErrorLog
         $this->exception = $exception;
 
         return $this;
+    }
+
+    public function __toString(): string
+    {
+        return "TransferErrorLog #{$this->getId()} - From: {$this->getFromAccountName()} To: {$this->getToAccountName()}";
     }
 }

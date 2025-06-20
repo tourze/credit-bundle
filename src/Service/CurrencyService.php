@@ -7,8 +7,8 @@ namespace CreditBundle\Service;
 use CreditBundle\Entity\Currency;
 use CreditBundle\Repository\CurrencyRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
 
 class CurrencyService
 {
@@ -46,7 +46,7 @@ class CurrencyService
 
         while (null === $dbItem && $retryTimes > 0) {
             $dbItem = $this->currencyRepository->findOneBy(['currency' => $currency]);
-            if (!$dbItem) {
+            if ($dbItem === null) {
                 $dbItem = new Currency();
                 $dbItem->setCurrency($currency);
                 $dbItem->setName($name ?: $currency);
