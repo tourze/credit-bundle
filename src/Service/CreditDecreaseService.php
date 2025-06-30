@@ -5,6 +5,8 @@ namespace CreditBundle\Service;
 use CreditBundle\Entity\Account;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Event\DecreasedEvent;
+use CreditBundle\Exception\CreditInsufficientException;
+use CreditBundle\Exception\InvalidAmountException;
 use CreditBundle\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -26,8 +28,7 @@ class CreditDecreaseService
         private readonly TransactionLimitService $limitService,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly LockService $lockService,
-    ) {
-    }
+    ) {}
 
     /**
      * 扣减积分
@@ -115,11 +116,12 @@ class CreditDecreaseService
     /**
      * 验证用户积分是否充足
      */
-    private function validateUserCredit(Account $account): void {
+    private function validateUserCredit(Account $account): void
+    {
         if ($account->getUser() !== null) {
             $validAmount = $this->accountService->getValidAmount($account);
             if ($validAmount <= 0) {
-                throw new \RuntimeException($account . ' 积分不足');
+                throw new CreditInsufficientException($account . ' 积分不足');
             }
         }
     }
@@ -127,10 +129,11 @@ class CreditDecreaseService
     /**
      * 验证积分数额合法性
      */
-    private function validateAmount(float $amount): float {
+    private function validateAmount(float $amount): float
+    {
         $costAmount = abs($amount);
         if ($costAmount <= 0) {
-            throw new \RuntimeException('扣减积分异常');
+            throw new InvalidAmountException('扣减积分异常');
         }
         return $costAmount;
     }
@@ -188,14 +191,15 @@ class CreditDecreaseService
         $transaction->setRelationId($relationId);
         $transaction->setContext($context);
         $this->entityManager->persist($transaction);
-        
+
         return $transaction;
     }
 
     /**
      * 更新账户余额
      */
-    private function updateAccountBalance(Account $account, float $costAmount, bool $isExpired): void {
+    private function updateAccountBalance(Account $account, float $costAmount, bool $isExpired): void
+    {
         $account->setEndingBalance((string)((float)$account->getEndingBalance() - $costAmount));
         $account->setDecreasedAmount((string)((float)$account->getDecreasedAmount() + $costAmount));
         if ($isExpired) {
@@ -281,7 +285,8 @@ class CreditDecreaseService
     /**
      * 更新回滚账户余额
      */
-    private function updateRollbackAccountBalance(Account $account, float $costAmount): void {
+    private function updateRollbackAccountBalance(Account $account, float $costAmount): void
+    {
         $account->setEndingBalance((string)((float)$account->getEndingBalance() - $costAmount));
         $account->setDecreasedAmount((string)((float)$account->getDecreasedAmount() + $costAmount));
         $this->entityManager->persist($account);

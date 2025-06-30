@@ -6,7 +6,7 @@ use CreditBundle\Repository\CurrencyRepository;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Tourze\EnumExtra\SelectDataFetcher;
 
-#[AutoconfigureTag('box-code.attribute-type.provider')]
+#[AutoconfigureTag(name: 'box-code.attribute-type.provider')]
 class AttributeTypeProvider implements SelectDataFetcher
 {
     public const PREFIX = 'credit:';

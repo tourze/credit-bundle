@@ -19,18 +19,18 @@ use Tourze\JsonRPC\Core\Exception\ApiException;
 use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
 use Tourze\JsonRPCPaginatorBundle\Procedure\PaginatorTrait;
 
-#[MethodTag('积分模块')]
-#[MethodDoc('获取用户的积分记录，总积分')]
-#[MethodExpose('GetUserCreditTransaction')]
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
+#[MethodTag(name: '积分模块')]
+#[MethodDoc(summary: '获取用户的积分记录，总积分')]
+#[MethodExpose(method: 'GetUserCreditTransaction')]
+#[IsGranted(attribute: 'IS_AUTHENTICATED_FULLY')]
 class GetUserCreditTransaction extends BaseProcedure
 {
     use PaginatorTrait;
 
-    #[MethodParam('开始时间')]
+    #[MethodParam(description: '开始时间')]
     public string $startTime = '';
 
-    #[MethodParam('结束时间')]
+    #[MethodParam(description: '结束时间')]
     public string $endTime = '';
 
     public function __construct(

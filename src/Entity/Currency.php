@@ -39,7 +39,7 @@ class Currency implements \Stringable, AdminArrayInterface, ResourceIdentity
 
     #[IndexColumn]
     #[TrackColumn]
-    #[Groups(['admin_curd', 'restful_read', 'restful_read', 'restful_write'])]
+    #[Groups(groups: ['admin_curd', 'restful_read', 'restful_read', 'restful_write'])]
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['comment' => '首选币种', 'default' => 0])]
     private ?bool $main = null;
 

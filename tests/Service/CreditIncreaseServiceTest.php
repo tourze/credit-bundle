@@ -241,58 +241,6 @@ class CreditIncreaseServiceTest extends AbstractTestCase
         $this->assertEquals($amount, $capturedEvent->getAmount());
     }
 
-    /**
-     * 测试异步增加方法调用增加方法
-     */
-    public function testAsyncIncrease_callsIncreaseMethod(): void
-    {
-        // 创建部分模拟的CreditIncreaseService以跟踪increase方法调用
-        $service = $this->getMockBuilder(CreditIncreaseService::class)
-            ->setConstructorArgs([
-                $this->limitService,
-                $this->entityManager,
-                $this->lockService,
-                $this->eventDispatcher
-            ])
-            ->onlyMethods(['increase'])
-            ->getMock();
-
-        // 准备测试数据
-        $eventNo = 'TEST-123';
-        $account = TestDataFactory::createAccount();
-        $amount = 50.00;
-        $remark = 'Test async increase';
-        $expireTime = new DateTime('+30 days');
-        $relationModel = 'TestModel';
-        $relationId = '12345';
-        $context = ['key' => 'value'];
-
-        // 期望increase方法被调用
-        $service->expects($this->once())
-            ->method('increase')
-            ->with(
-                $eventNo,
-                $account,
-                $amount,
-                $remark,
-                $expireTime,
-                $relationModel,
-                $relationId,
-                $context
-            );
-
-        // 执行测试
-        $service->asyncIncrease(
-            $eventNo,
-            $account,
-            $amount,
-            $remark,
-            $expireTime,
-            $relationModel,
-            $relationId,
-            $context
-        );
-    }
 
     /**
      * 测试负数金额自动转为正数

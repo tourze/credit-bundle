@@ -7,6 +7,7 @@ namespace CreditBundle\Service;
 use CreditBundle\Entity\Account;
 use CreditBundle\Entity\Currency;
 use CreditBundle\Event\GetAccountValidPointEvent;
+use CreditBundle\Exception\AccountCreationException;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,8 +27,7 @@ class AccountService
         private readonly TransactionRepository $transactionRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly LockService $lockService,
-    ) {
-    }
+    ) {}
 
     public function getSystemAccount(Currency $currency): Account
     {
@@ -47,8 +47,8 @@ class AccountService
             $account = new Account();
             $account->setUser($user);
             $account->setCurrency($currency);
-            $id = method_exists($user, 'getId') ? $user->getId() : $user->getUserIdentifier();
-            $account->setName("用户{$id}的{$currency->getName()}账户");
+            $userIdentifier = $user->getUserIdentifier();
+            $account->setName("用户{$userIdentifier}的{$currency->getName()}账户");
             $this->entityManager->persist($account);
             $this->entityManager->flush();
         }
@@ -88,7 +88,7 @@ class AccountService
             // 锁获取失败，再次尝试查找账号（可能已被其他进程创建）
             $account = $this->accountRepository->findOneBy($condition);
             if ($account === null) {
-                throw new \RuntimeException('无法创建账号，获取锁失败');
+                throw new AccountCreationException('无法创建账号，获取锁失败');
             }
             return $account;
         }

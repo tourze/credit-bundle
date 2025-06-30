@@ -5,7 +5,7 @@ namespace CreditBundle\Service;
 use Brick\Money\Currency;
 use Symfony\Component\DependencyInjection\Attribute\AsAlias;
 
-#[AsAlias(CurrencyServiceInterface::class, public: true)]
+#[AsAlias(id: CurrencyServiceInterface::class, public: true)]
 class DefaultCurrencyServiceInterface implements CurrencyServiceInterface
 {
     public const CODE = 'CNY';

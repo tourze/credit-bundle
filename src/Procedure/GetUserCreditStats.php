@@ -13,13 +13,13 @@ use Tourze\JsonRPC\Core\Attribute\MethodParam;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
 use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
 
-#[MethodTag('积分模块')]
-#[MethodDoc('获取用户的总积分（包含即将过期积分）')]
-#[MethodExpose('GetUserCreditStats')]
-#[IsGranted('IS_AUTHENTICATED_FULLY')]
+#[MethodTag(name: '积分模块')]
+#[MethodDoc(summary: '获取用户的总积分（包含即将过期积分）')]
+#[MethodExpose(method: 'GetUserCreditStats')]
+#[IsGranted(attribute: 'IS_AUTHENTICATED_FULLY')]
 class GetUserCreditStats extends BaseProcedure
 {
-    #[MethodParam('要查询的币种')]
+    #[MethodParam(description: '要查询的币种')]
     public string $currency;
 
     public function __construct(

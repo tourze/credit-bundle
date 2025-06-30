@@ -18,20 +18,20 @@ use Tourze\JsonRPC\Core\Model\JsonRpcRequest;
 use Tourze\JsonRPCCacheBundle\Procedure\CacheableProcedure;
 use Tourze\JsonRPCPaginatorBundle\Procedure\PaginatorTrait;
 
-#[MethodTag('积分模块')]
-#[MethodDoc('获取指定用户的积分流水（分页）')]
-#[MethodExpose('GetCreditTransactionsByBizUserId')]
+#[MethodTag(name: '积分模块')]
+#[MethodDoc(summary: '获取指定用户的积分流水（分页）')]
+#[MethodExpose(method: 'GetCreditTransactionsByBizUserId')]
 class GetCreditTransactionsByBizUserId extends CacheableProcedure
 {
     use PaginatorTrait;
 
-    #[MethodParam('开始时间')]
+    #[MethodParam(description: '开始时间')]
     public string $startTime = '';
 
-    #[MethodParam('结束时间')]
+    #[MethodParam(description: '结束时间')]
     public string $endTime = '';
 
-    #[MethodParam('用户ID')]
+    #[MethodParam(description: '用户ID')]
     public string $userId = '';
 
     public function __construct(

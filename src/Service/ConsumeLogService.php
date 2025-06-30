@@ -4,6 +4,7 @@ namespace CreditBundle\Service;
 
 use CreditBundle\Entity\ConsumeLog;
 use CreditBundle\Entity\Transaction;
+use CreditBundle\Exception\ConsumeLogException;
 use CreditBundle\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
@@ -17,8 +18,7 @@ class ConsumeLogService
     public function __construct(
         private readonly TransactionRepository $transactionRepository,
         private readonly EntityManagerInterface $entityManager,
-    ) {
-    }
+    ) {}
 
     /**
      * 保存消费日志并更新交易记录余额
@@ -51,7 +51,7 @@ class ConsumeLogService
         );
 
         if (empty($consumableRecords)) {
-            throw new \LogicException('没有可消费的积分记录');
+            throw new ConsumeLogException('没有可消费的积分记录');
         }
 
         // 开始消费积分
@@ -69,7 +69,7 @@ class ConsumeLogService
         }
 
         if ($remainingAmount > 0) {
-            throw new \LogicException('余额不够扣');
+            throw new ConsumeLogException('余额不够扣');
         }
     }
 }

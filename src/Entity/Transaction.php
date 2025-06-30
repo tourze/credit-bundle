@@ -13,7 +13,7 @@ use Symfony\Component\Serializer\Attribute\Ignore;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
@@ -24,11 +24,7 @@ use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
 {
     use TimestampableAware;
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
+    use SnowflakeKeyAware;
 
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '上下文'])]
     private ?array $context = [];
@@ -53,12 +49,12 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
     private ?string $remark = null;
 
     #[IndexColumn]
-    #[Groups(['restful_read'])]
+    #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::STRING, length: 120, nullable: true, options: ['comment' => '关联第三方id'])]
     private ?string $relationId = null;
 
     #[IndexColumn]
-    #[Groups(['restful_read'])]
+    #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::STRING, length: 200, nullable: true, options: ['comment' => '关联模型类'])]
     private ?string $relationModel = null;
 
@@ -94,10 +90,6 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         $this->consumeLogs = new ArrayCollection();
     }
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
 
     public function getContext(): ?array
     {

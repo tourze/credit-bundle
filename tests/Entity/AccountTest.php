@@ -163,20 +163,6 @@ class AccountTest extends AbstractTestCase
         $this->assertFalse($account->getLimits()->contains($limit));
     }
 
-    /**
-     * 测试交易添加删除
-     *
-     * 注意：由于Transaction实体在测试环境下难以独立实例化和操作，
-     * 且Account与Transaction关系存在循环依赖，此测试暂时跳过。
-     * 在实际环境中，这些关系通过ORM自动处理。
-     */
-    public function testAddRemoveTransaction_properlyManagesTransactions(): void
-    {
-        $this->markTestSkipped(
-            '由于Transaction和Account有复杂的双向关系，无法在简单的单元测试中模拟，' .
-            '这部分功能由集成测试或功能测试覆盖。'
-        );
-    }
 
     /**
      * 测试toString方法

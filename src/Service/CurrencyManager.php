@@ -11,7 +11,7 @@ use Tourze\EnumExtra\SelectDataFetcher;
  * 通过这个服务获取系统所有货币的信息
  */
 #[Autoconfigure(lazy: true, public: true)]
-#[AutoconfigureTag('as-coroutine')]
+#[AutoconfigureTag(name: 'as-coroutine')]
 class CurrencyManager implements SelectDataFetcher
 {
     public function __construct(

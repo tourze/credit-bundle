@@ -6,7 +6,7 @@ use CreditBundle\Repository\ConsumeLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineSnowflakeBundle\Service\SnowflakeIdGenerator;
+use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 
 #[ORM\Entity(repositoryClass: ConsumeLogRepository::class)]
@@ -15,12 +15,7 @@ use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 class ConsumeLog implements \Stringable
 {
     use CreateTimeAware;
-
-    #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
-    #[ORM\CustomIdGenerator(SnowflakeIdGenerator::class)]
-    #[ORM\Column(type: Types::BIGINT, nullable: false, options: ['comment' => 'ID'])]
-    private ?string $id = null;
+    use SnowflakeKeyAware;
 
     /**
      * @var Transaction|null 指向增加积分的流水，表示积分是从哪一笔增加的记录中扣除的
@@ -43,10 +38,6 @@ class ConsumeLog implements \Stringable
     #[ORM\Column(length: 128, nullable: true, options: ['comment' => '创建时IP'])]
     private ?string $createdFromIp = null;
 
-    public function getId(): ?string
-    {
-        return $this->id;
-    }
 
     public function getCostTransaction(): ?Transaction
     {

@@ -16,8 +16,7 @@ class CurrencyService
         private readonly CurrencyRepository $currencyRepository,
         private readonly LoggerInterface $logger,
         private readonly EntityManagerInterface $entityManager,
-    ) {
-    }
+    ) {}
 
     /**
      * 获取指定名称的币种记录
@@ -49,7 +48,7 @@ class CurrencyService
             if ($dbItem === null) {
                 $dbItem = new Currency();
                 $dbItem->setCurrency($currency);
-                $dbItem->setName($name ?: $currency);
+                $dbItem->setName($name ?? $currency);
                 $dbItem->setValid(true);
                 $dbItem->setRemark(time() . '自动生成');
 
