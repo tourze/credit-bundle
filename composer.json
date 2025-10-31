@@ -50,7 +50,7 @@
     "tourze/doctrine-user-bundle": "0.0.*",
     "tourze/easy-admin-enum-field-bundle": "0.0.*",
     "tourze/easy-admin-menu-bundle": "0.1.*",
-    "tourze/enum-extra": "0.1.*",
+    "tourze/enum-extra": "1.*",
     "tourze/json-rpc-cache-bundle": "0.1.*",
     "tourze/json-rpc-core": "0.0.*",
     "tourze/json-rpc-paginator-bundle": "0.0.*",
