@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Service;
 
-use CreditBundle\Repository\CurrencyRepository;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Tourze\EnumExtra\SelectDataFetcher;
 
@@ -13,19 +14,22 @@ class AttributeTypeProvider implements SelectDataFetcher
 
     public const SPECIAL = 'special_credit';
 
-    public function __construct(private readonly CurrencyRepository $currencyRepository)
-    {
-    }
-
     public function genSelectData(): iterable
     {
-        $models = $this->currencyRepository->findBy(['valid' => true]);
-        foreach ($models as $model) {
+        // 提供常见的币种选项
+        $currencies = [
+            ['code' => 'CNY', 'name' => '人民币'],
+            ['code' => 'USD', 'name' => '美元'],
+            ['code' => 'EUR', 'name' => '欧元'],
+            ['code' => 'POINT', 'name' => '积分'],
+        ];
+
+        foreach ($currencies as $currency) {
             yield [
-                'label' => $model->getName(),
-                'text' => $model->getName(),
-                'value' => self::PREFIX . $model->getCurrency(),
-                'name' => $model->getName(),
+                'label' => $currency['name'],
+                'text' => $currency['name'],
+                'value' => self::PREFIX . $currency['code'],
+                'name' => $currency['name'],
             ];
         }
 

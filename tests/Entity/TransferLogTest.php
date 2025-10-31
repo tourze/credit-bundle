@@ -5,13 +5,33 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Entity;
 
 use CreditBundle\Entity\TransferLog;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 
-class TransferLogTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(TransferLog::class)]
+final class TransferLogTest extends AbstractEntityTestCase
 {
-    public function testEntityCreation(): void
+    protected function createEntity(): object
     {
-        $entity = new TransferLog();
-        self::assertInstanceOf(TransferLog::class, $entity);
+        return new TransferLog();
+    }
+
+    /**
+     * @return iterable<array{string, mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        return [
+            'currency' => ['currency', 'USD'],
+            'outAmount' => ['outAmount', '100.00'],
+            'inAmount' => ['inAmount', '95.00'],
+            'remark' => ['remark', 'Test transfer'],
+            'relationId' => ['relationId', 'REL-001'],
+            'relationModel' => ['relationModel', 'TestModel'],
+            'expireTime' => ['expireTime', new \DateTimeImmutable('+30 days')],
+        ];
     }
 }

@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Entity;
 
 use CreditBundle\Enum\LimitType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Ignore;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Symfony\Component\Validator\Constraints as Assert;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
@@ -20,6 +22,7 @@ class Limit implements \Stringable
     use TimestampableAware;
     use BlameableAware;
     use SnowflakeKeyAware;
+    use IpTraceableAware;
 
     #[Ignore]
     #[ORM\ManyToOne(targetEntity: Account::class, fetch: 'EXTRA_LAZY', inversedBy: 'limits')]
@@ -27,43 +30,36 @@ class Limit implements \Stringable
     private ?Account $account = null;
 
     #[ORM\Column(type: Types::STRING, length: 30, enumType: LimitType::class, options: ['comment' => '类型'])]
+    #[Assert\Choice(callback: [LimitType::class, 'cases'])]
+    #[Assert\NotNull]
     private ?LimitType $type = null;
 
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => '限制数量'])]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
     private ?int $value = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true, options: ['comment' => '备注'])]
+    #[Assert\Length(max: 255)]
     private ?string $remark = null;
-
-
-    #[CreateIpColumn]
-    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '创建时IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '更新时IP'])]
-    private ?string $updatedFromIp = null;
 
     public function __toString(): string
     {
-        if ($this->getId() === null || $this->getId() === '') {
+        if (null === $this->getId() || '' === $this->getId()) {
             return '';
         }
 
-        return "{$this->getType()->getLabel()}: {$this->getValue()}";
+        return "{$this->getType()?->getLabel()}: {$this->getValue()}";
     }
 
-
-    public function getType(): LimitType
+    public function getType(): ?LimitType
     {
         return $this->type;
     }
 
-    public function setType(LimitType $type): self
+    public function setType(LimitType $type): void
     {
         $this->type = $type;
-
-        return $this;
     }
 
     public function getValue(): ?int
@@ -71,11 +67,9 @@ class Limit implements \Stringable
         return $this->value;
     }
 
-    public function setValue(int $value): self
+    public function setValue(int $value): void
     {
         $this->value = $value;
-
-        return $this;
     }
 
     public function getRemark(): ?string
@@ -83,11 +77,9 @@ class Limit implements \Stringable
         return $this->remark;
     }
 
-    public function setRemark(?string $remark): self
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
-
-        return $this;
     }
 
     public function getAccount(): ?Account
@@ -95,33 +87,8 @@ class Limit implements \Stringable
         return $this->account;
     }
 
-    public function setAccount(?Account $account): self
+    public function setAccount(?Account $account): void
     {
         $this->account = $account;
-
-        return $this;
     }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-
-        return $this;
-    }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }}
+}

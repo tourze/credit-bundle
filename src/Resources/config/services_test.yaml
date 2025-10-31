@@ -1,0 +1,11 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  # DataFixtures services for test environment
+  CreditBundle\DataFixtures\:
+    resource: '../../DataFixtures/'
+    autoconfigure: true
+    tags: ['doctrine.fixture.orm']

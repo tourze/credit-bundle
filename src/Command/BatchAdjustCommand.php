@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Command;
 
-use CreditBundle\Repository\CurrencyRepository;
+use CreditBundle\Entity\Account;
+use CreditBundle\Exception\InvalidAmountException;
 use CreditBundle\Service\AccountService;
 use CreditBundle\Service\TransactionService;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -21,10 +24,10 @@ use Tourze\SnowflakeBundle\Service\Snowflake;
 class BatchAdjustCommand extends Command
 {
     public const NAME = 'credit:batch-adjust';
+
     public function __construct(
         private readonly TransactionService $transactionService,
         private readonly AccountService $accountService,
-        private readonly CurrencyRepository $currencyRepository,
         private readonly Snowflake $snowflake,
         private readonly KernelInterface $kernel,
     ) {
@@ -34,14 +37,13 @@ class BatchAdjustCommand extends Command
     protected function configure(): void
     {
         $this->setDescription('文件路径')
-            ->addArgument('xlsFileName', InputArgument::REQUIRED, '文件路径');
+            ->addArgument('xlsFileName', InputArgument::REQUIRED, '文件路径')
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $projectDir = $this->kernel->getProjectDir();
-
-        $filePath = $projectDir . $input->getArgument('xlsFileName');
+        $filePath = $this->getFilePath($input);
 
         if (!file_exists($filePath)) {
             $output->writeln('任务credit:batch-adjust文件不存在');
@@ -49,44 +51,116 @@ class BatchAdjustCommand extends Command
             return Command::FAILURE;
         }
 
+        try {
+            $this->processSpreadsheet($filePath, $output);
+
+            return Command::SUCCESS;
+        } catch (\Exception $e) {
+            $output->writeln('任务credit:batch-adjust处理失败: ' . $e->getMessage());
+
+            return Command::FAILURE;
+        }
+    }
+
+    private function getFilePath(InputInterface $input): string
+    {
+        $projectDir = $this->kernel->getProjectDir();
+        $fileName = $input->getArgument('xlsFileName');
+
+        if (!is_string($fileName)) {
+            throw new \InvalidArgumentException('File name must be a string');
+        }
+
+        return $projectDir . '/' . $fileName;
+    }
+
+    private function processSpreadsheet(string $filePath, OutputInterface $output): void
+    {
         $spreadsheet = IOFactory::load($filePath);
         $sheet = $spreadsheet->getSheet(0);
         $rowIndex = 0;
+
         foreach ($sheet->getRowIterator() as $row) {
-            // 如果是第一行（索引为0），则跳过
-            if (0 === $rowIndex) {
+            if ($this->shouldSkipRow($rowIndex)) {
                 ++$rowIndex;
                 continue;
             }
 
-            $rowData = [];
-            $cellIterator = $row->getCellIterator();
-            $cellIterator->setIterateOnlyExistingCells(false);
-
-            foreach ($cellIterator as $cell) {
-                $value = $cell->getValue();
-                $rowData[] = $value;
-            }
-            $currency = $this->currencyRepository->findOneBy(['name' => $rowData[3]]);
-            if ($currency === null) {
-                $output->writeln('任务credit:batch-adjust currency数据不存在');
-
-                return Command::FAILURE;
-            }
-            $account = $this->accountService->getAccountByName($rowData[0], $currency);
-            // 正数是加积分，负数减积分
-            if ($rowData[1] > 0) {
-                $this->transactionService->increase($this->snowflake->id(), $account, $rowData[1], $rowData[2]);
-            } elseif ($rowData[1] < 0) {
-                $this->transactionService->decrease($this->snowflake->id(), $account, $rowData[1], $rowData[2]);
-            } else {
-                $output->writeln('任务credit:batch-adjust变更数值错误');
-
-                return Command::FAILURE;
-            }
+            $rowData = $this->extractRowData($row);
+            $this->processRowData($rowData, $output);
             ++$rowIndex;
         }
+    }
 
-        return Command::SUCCESS;
+    private function shouldSkipRow(int $rowIndex): bool
+    {
+        return 0 === $rowIndex; // 跳过第一行
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private function extractRowData(mixed $row): array
+    {
+        if (!is_object($row) || !method_exists($row, 'getCellIterator')) {
+            throw new \InvalidArgumentException('Invalid row object provided');
+        }
+
+        $rowData = [];
+        $cellIterator = $row->getCellIterator();
+
+        if (!is_object($cellIterator) || !method_exists($cellIterator, 'setIterateOnlyExistingCells')) {
+            throw new \InvalidArgumentException('Invalid cell iterator object');
+        }
+
+        $cellIterator->setIterateOnlyExistingCells(false);
+
+        if (!is_iterable($cellIterator)) {
+            throw new \InvalidArgumentException('Cell iterator must be iterable');
+        }
+
+        foreach ($cellIterator as $cell) {
+            if (!is_object($cell) || !method_exists($cell, 'getValue')) {
+                throw new \InvalidArgumentException('Invalid cell object');
+            }
+
+            $value = $cell->getValue();
+            $rowData[] = $value;
+        }
+
+        return $rowData;
+    }
+
+    /**
+     * @param array<int, mixed> $rowData
+     */
+    private function processRowData(array $rowData, OutputInterface $output): void
+    {
+        if (!isset($rowData[0], $rowData[1], $rowData[2], $rowData[3])) {
+            throw new \InvalidArgumentException('Row data must contain at least 4 elements');
+        }
+
+        if (!is_scalar($rowData[0]) || !is_scalar($rowData[1]) || !is_scalar($rowData[2]) || !is_scalar($rowData[3])) {
+            throw new \InvalidArgumentException('Row data elements must be scalar values');
+        }
+
+        $name = (string) $rowData[0];
+        $amount = (float) $rowData[1];
+        $reason = (string) $rowData[2];
+        $currency = (string) $rowData[3];
+
+        $account = $this->accountService->getAccountByName($name, $currency);
+        $this->adjustAccount($account, $amount, $reason, $output);
+    }
+
+    private function adjustAccount(Account $account, float $amount, string $reason, OutputInterface $output): void
+    {
+        if ($amount > 0) {
+            $this->transactionService->increase($this->snowflake->id(), $account, $amount, $reason);
+        } elseif ($amount < 0) {
+            $this->transactionService->decrease($this->snowflake->id(), $account, $amount, $reason);
+        } else {
+            throw new InvalidAmountException('变更数值错误');
+        }
     }
 }

@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Procedure;
 
 use Carbon\CarbonImmutable;
 use CreditBundle\Service\AccountService;
-use CreditBundle\Service\CurrencyService;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
@@ -25,14 +26,15 @@ class GetUserCreditStats extends BaseProcedure
     public function __construct(
         private readonly Security $security,
         private readonly AccountService $accountService,
-        private readonly CurrencyService $currencyService,
     ) {
     }
 
     public function execute(): array
     {
-        $currency = $this->currencyService->getCurrencyByCode($this->currency);
-        $account = $this->accountService->getAccountByUser($this->security->getUser(), $currency);
+        $user = $this->security->getUser();
+        assert(null !== $user, 'User should be authenticated');
+
+        $account = $this->accountService->getAccountByUser($user, $this->currency);
 
         $now = CarbonImmutable::now();
 

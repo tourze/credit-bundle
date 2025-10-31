@@ -4,32 +4,48 @@ declare(strict_types=1);
 
 namespace CreditBundle\Tests\Procedure;
 
+use CreditBundle\Exception\TransactionException;
 use CreditBundle\Procedure\GetUserCreditTransaction;
-use CreditBundle\Repository\AccountRepository;
-use CreditBundle\Repository\TransactionRepository;
-use CreditBundle\Service\AccountService;
-use CreditBundle\Service\CurrencyManager;
-use PHPUnit\Framework\TestCase;
-use Symfony\Bundle\SecurityBundle\Security;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
 
-class GetUserCreditTransactionTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(GetUserCreditTransaction::class)]
+#[RunTestsInSeparateProcesses]
+final class GetUserCreditTransactionTest extends AbstractProcedureTestCase
 {
+    protected function onSetUp(): void
+    {
+    }
+
     public function testConstruct(): void
     {
-        $security = $this->createMock(Security::class);
-        $transactionRepository = $this->createMock(TransactionRepository::class);
-        $accountService = $this->createMock(AccountService::class);
-        $accountRepository = $this->createMock(AccountRepository::class);
-        $currencyManager = $this->createMock(CurrencyManager::class);
-        
-        $procedure = new GetUserCreditTransaction(
-            $security,
-            $transactionRepository,
-            $accountService,
-            $accountRepository,
-            $currencyManager
-        );
-        
+        $container = self::getContainer();
+        $procedure = $container->get(GetUserCreditTransaction::class);
         $this->assertInstanceOf(GetUserCreditTransaction::class, $procedure);
     }
-} 
+
+    public function testExecute(): void
+    {
+        // 在没有账户数据的情况下，应该抛出异常
+        $container = self::getContainer();
+
+        // 清理可能存在的测试数据
+        $entityManager = self::getEntityManager();
+        $entityManager->createQuery('DELETE FROM CreditBundle\Entity\Transaction')->execute();
+        $entityManager->createQuery('DELETE FROM CreditBundle\Entity\Account')->execute();
+
+        /** @var GetUserCreditTransaction $procedure */
+        $procedure = $container->get(GetUserCreditTransaction::class);
+        $procedure->currentPage = 1;
+        $procedure->pageSize = 10;
+
+        $this->expectException(TransactionException::class);
+        $this->expectExceptionMessage('暂无记录');
+
+        $procedure->execute();
+    }
+}

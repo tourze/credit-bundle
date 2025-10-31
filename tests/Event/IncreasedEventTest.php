@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 namespace CreditBundle\Tests\Event;
 
+use CreditBundle\Entity\Account;
 use CreditBundle\Event\IncreasedEvent;
-use CreditBundle\Tests\AbstractTestCase;
+use CreditBundle\Tests\TestDataFactory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractEventTestCase;
 
-class IncreasedEventTest extends AbstractTestCase
+/**
+ * @internal
+ */
+#[CoversClass(IncreasedEvent::class)]
+final class IncreasedEventTest extends AbstractEventTestCase
 {
     public function testBasicEventCreation(): void
     {
         $event = new IncreasedEvent();
 
-        self::assertInstanceOf(IncreasedEvent::class, $event);
+        // 测试事件初始状态
         self::assertNull($event->getAmount());
         self::assertNull($event->getRemark());
         self::assertNull($event->getContext());
@@ -21,7 +28,8 @@ class IncreasedEventTest extends AbstractTestCase
 
     public function testEventWithData(): void
     {
-        $account = $this->createMock(\CreditBundle\Entity\Account::class);
+        // 使用真实的 Account 对象而不是 Mock
+        $account = TestDataFactory::createAccount('Test Account for Event');
         $event = new IncreasedEvent();
 
         $event->setAmount(200.75);

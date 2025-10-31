@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Service;
 
 use CreditBundle\Entity\Account;
@@ -14,19 +16,21 @@ use Tourze\Symfony\AopAsyncBundle\Attribute\Async;
 /**
  * 积分增加服务
  */
-#[Autoconfigure(lazy: true, public: true)]
+#[Autoconfigure(public: true)]
 class CreditIncreaseService
 {
     public function __construct(
-        private readonly TransactionLimitService $limitService,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly LockService $lockService,
-        private readonly EventDispatcherInterface $eventDispatcher,
+        private TransactionLimitService $limitService,
+        private EntityManagerInterface $entityManager,
+        private LockService $lockService,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
     /**
      * 加积分
+     *
+     * @param array<string, mixed>|null $context
      */
     public function increase(
         string $eventNo,
@@ -43,15 +47,15 @@ class CreditIncreaseService
         // 检查转入限额
         $this->limitService->checkIncreaseLimit($account, $amount);
 
-        $this->lockService->blockingRun($account, function () use ($account, $amount, $remark, $eventNo, $context, $relationModel, $relationId, $expireTime) {
+        $this->lockService->blockingRun($account, function () use ($account, $amount, $remark, $eventNo, $context, $relationModel, $relationId, $expireTime): void {
             $this->entityManager->refresh($account);
 
             $transaction = new Transaction();
             $transaction->setCurrency($account->getCurrency());
             $transaction->setEventNo($eventNo);
             $transaction->setAccount($account);
-            $transaction->setAmount((string)abs($amount));
-            $transaction->setBalance((string)abs($amount));
+            $transaction->setAmount((string) abs($amount));
+            $transaction->setBalance((string) abs($amount));
             $transaction->setRemark($remark);
             $transaction->setRelationModel($relationModel);
             $transaction->setRelationId($relationId);
@@ -59,8 +63,8 @@ class CreditIncreaseService
             $transaction->setExpireTime($expireTime);
             $this->entityManager->persist($transaction);
 
-            $account->setEndingBalance((string)((float)$account->getEndingBalance() + $amount));
-            $account->setIncreasedAmount((string)((float)$account->getIncreasedAmount() + $amount));
+            $account->setEndingBalance((string) ((float) $account->getEndingBalance() + $amount));
+            $account->setIncreasedAmount((string) ((float) $account->getIncreasedAmount() + $amount));
             $this->entityManager->persist($account);
 
             $this->entityManager->flush();
@@ -78,6 +82,10 @@ class CreditIncreaseService
 
     /**
      * 异步转账
+     *
+     * @param array<string, mixed>|null $context
+     *
+     * 不考虑并发 - 委托给increase方法，该方法内部已通过LockService加锁控制并发
      */
     #[Async]
     public function asyncIncrease(

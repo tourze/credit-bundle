@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -14,6 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class SendNoticeCommand extends Command
 {
     public const NAME = 'credit:send-notice';
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         return Command::SUCCESS;

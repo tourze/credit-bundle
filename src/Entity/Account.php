@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Entity;
 
 use CreditBundle\Repository\AccountRepository;
@@ -8,9 +10,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\Arrayable\AdminArrayInterface;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
 use Tourze\EnumExtra\Itemable;
@@ -24,25 +26,31 @@ use Tourze\LockServiceBundle\Model\LockEntity;
  * 参考银行的设计，我们做成一个币种一个账号，单币种账号统计上会简单一点点。
  *
  * @see https://www.financialnews.com.cn/gc/gz/202107/t20210728_224526.html
+ * @implements AdminArrayInterface<string, mixed>
  */
 #[ORM\Entity(repositoryClass: AccountRepository::class)]
 #[ORM\Table(name: 'credit_account', options: ['comment' => '账户'])]
-#[ORM\UniqueConstraint(name: 'credit_account_idx_uniq', columns: ['name', 'currency_id', 'user_id'])]
+#[ORM\UniqueConstraint(name: 'credit_account_idx_uniq', columns: ['name', 'currency', 'user_id'])]
 class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
 {
     use TimestampableAware;
     use BlameableAware;
+    use IpTraceableAware;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]
-    private ?int $id = 0;
+    private int $id = 0;
 
     #[ORM\Column(type: Types::STRING, length: 120, unique: true, options: ['comment' => '名称'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 120)]
     private string $name;
 
-    #[ORM\JoinColumn(nullable: false)]
-    #[ORM\ManyToOne(targetEntity: Currency::class, fetch: 'EXTRA_LAZY')]
-    private Currency $currency;
+    #[ORM\Column(type: Types::STRING, length: 20, nullable: false, options: ['comment' => '币种代码'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
+    private string $currency;
 
     /**
      * 账户不一定跟用户关联的，但为了简化设计，我们还是约束一下
@@ -53,43 +61,38 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
     private ?UserInterface $user = null;
 
     /**
-     * @var Collection<Limit>
+     * @var Collection<int, Limit>
      */
-    #[ORM\OneToMany(mappedBy: 'account', targetEntity: Limit::class, cascade: ['persist'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Limit::class, mappedBy: 'account', cascade: ['persist'], fetch: 'EXTRA_LAZY', orphanRemoval: true)]
     private Collection $limits;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '期末余额'])]
+    #[Assert\Length(max: 255)]
     private ?string $endingBalance = null;
 
     /**
      * @var Collection<int, Transaction>
      */
-    #[ORM\OneToMany(mappedBy: 'account', targetEntity: Transaction::class)]
+    #[ORM\OneToMany(targetEntity: Transaction::class, mappedBy: 'account')]
     private Collection $transactions;
 
     /**
      * @var Collection<int, AdjustRequest>
      */
-    #[ORM\OneToMany(mappedBy: 'account', targetEntity: AdjustRequest::class)]
+    #[ORM\OneToMany(targetEntity: AdjustRequest::class, mappedBy: 'account')]
     private Collection $adjustRequests;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '增加发生额'])]
+    #[Assert\Length(max: 255)]
     private ?string $increasedAmount = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '减少发生额'])]
+    #[Assert\Length(max: 255)]
     private ?string $decreasedAmount = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '过期发生额'])]
+    #[Assert\Length(max: 255)]
     private ?string $expiredAmount = null;
-
-
-    #[CreateIpColumn]
-    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '创建时IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '更新时IP'])]
-    private ?string $updatedFromIp = null;
 
     public function __construct()
     {
@@ -105,14 +108,14 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
 
     public function __toString(): string
     {
-        if ($this->getId() === null || $this->getId() === 0) {
+        if (0 === $this->getId()) {
             return '';
         }
 
         return "{$this->getCurrency()} - {$this->getName()}";
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
@@ -122,11 +125,9 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return strval($this->name);
     }
 
-    public function setName(string $name): self
+    public function setName(string $name): void
     {
         $this->name = $name;
-
-        return $this;
     }
 
     public function getUser(): ?UserInterface
@@ -134,11 +135,9 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->user;
     }
 
-    public function setUser(?UserInterface $user): self
+    public function setUser(?UserInterface $user): void
     {
         $this->user = $user;
-
-        return $this;
     }
 
     /**
@@ -149,17 +148,15 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->limits;
     }
 
-    public function addLimit(Limit $limit): self
+    public function addLimit(Limit $limit): void
     {
         if (!$this->limits->contains($limit)) {
-            $this->limits[] = $limit;
+            $this->limits->add($limit);
             $limit->setAccount($this);
         }
-
-        return $this;
     }
 
-    public function removeLimit(Limit $limit): self
+    public function removeLimit(Limit $limit): void
     {
         if ($this->limits->removeElement($limit)) {
             // set the owning side to null (unless already changed)
@@ -167,22 +164,21 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
                 $limit->setAccount(null);
             }
         }
-
-        return $this;
     }
 
-    public function getCurrency(): Currency
+    public function getCurrency(): string
     {
         return $this->currency;
     }
 
-    public function setCurrency(Currency $currency): self
+    public function setCurrency(string $currency): void
     {
         $this->currency = $currency;
-
-        return $this;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toSelectItem(): array
     {
         return [
@@ -197,11 +193,9 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->endingBalance;
     }
 
-    public function setEndingBalance(string|float|null $endingBalance): static
+    public function setEndingBalance(string|float|null $endingBalance): void
     {
-        $this->endingBalance = $endingBalance;
-
-        return $this;
+        $this->endingBalance = is_numeric($endingBalance) ? (string) $endingBalance : $endingBalance;
     }
 
     /**
@@ -212,25 +206,21 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->adjustRequests;
     }
 
-    public function addAdjustRequests(AdjustRequest $adjustRequests): static
+    public function addAdjustRequests(AdjustRequest $adjustRequests): void
     {
         if (!$this->adjustRequests->contains($adjustRequests)) {
             $this->adjustRequests->add($adjustRequests);
             $adjustRequests->setAccount($this);
         }
-
-        return $this;
     }
 
-    public function removeAdjustRequests(AdjustRequest $adjustRequests): static
+    public function removeAdjustRequests(AdjustRequest $adjustRequests): void
     {
         if ($this->adjustRequests->removeElement($adjustRequests)) {
             // set the owning side to null (unless already changed)
             // set the owning side to null (unless already changed)
             // Note: We cannot set null on a required relationship
         }
-
-        return $this;
     }
 
     /**
@@ -241,25 +231,21 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->transactions;
     }
 
-    public function addTransaction(Transaction $transaction): static
+    public function addTransaction(Transaction $transaction): void
     {
         if (!$this->transactions->contains($transaction)) {
             $this->transactions->add($transaction);
             $transaction->setAccount($this);
         }
-
-        return $this;
     }
 
-    public function removeTransaction(Transaction $transaction): static
+    public function removeTransaction(Transaction $transaction): void
     {
         if ($this->transactions->removeElement($transaction)) {
             // set the owning side to null (unless already changed)
             // set the owning side to null (unless already changed)
             // Note: We cannot set null on a required relationship
         }
-
-        return $this;
     }
 
     public function getIncreasedAmount(): ?string
@@ -267,11 +253,9 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->increasedAmount;
     }
 
-    public function setIncreasedAmount(string|float|null $increasedAmount): static
+    public function setIncreasedAmount(string|float|null $increasedAmount): void
     {
-        $this->increasedAmount = $increasedAmount;
-
-        return $this;
+        $this->increasedAmount = is_numeric($increasedAmount) ? (string) $increasedAmount : $increasedAmount;
     }
 
     public function getDecreasedAmount(): ?string
@@ -279,11 +263,9 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->decreasedAmount;
     }
 
-    public function setDecreasedAmount(string|float|null $decreasedAmount): static
+    public function setDecreasedAmount(string|float|null $decreasedAmount): void
     {
-        $this->decreasedAmount = $decreasedAmount;
-
-        return $this;
+        $this->decreasedAmount = is_numeric($decreasedAmount) ? (string) $decreasedAmount : $decreasedAmount;
     }
 
     public function getExpiredAmount(): ?string
@@ -291,47 +273,26 @@ class Account implements \Stringable, Itemable, AdminArrayInterface, LockEntity
         return $this->expiredAmount;
     }
 
-    public function setExpiredAmount(string|float|null $expiredAmount): static
+    public function setExpiredAmount(string|float|null $expiredAmount): void
     {
-        $this->expiredAmount = $expiredAmount;
-
-        return $this;
+        $this->expiredAmount = is_numeric($expiredAmount) ? (string) $expiredAmount : $expiredAmount;
     }
 
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-
-        return $this;
-    }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
-    }public function retrieveLockResource(): string
+    public function retrieveLockResource(): string
     {
         return "credit_account_{$this->getId()}";
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function retrieveAdminArray(): array
     {
         return [
             'id' => $this->getId(),
             'createTime' => $this->getCreateTime()?->format('Y-m-d H:i:s'),
             'updateTime' => $this->getUpdateTime()?->format('Y-m-d H:i:s'),
-            'currency' => $this->getCurrency()->retrieveAdminArray(),
+            'currency' => $this->getCurrency(),
             'endingBalance' => $this->getEndingBalance(),
             'increasedAmount' => $this->getIncreasedAmount(),
             'decreasedAmount' => $this->getDecreasedAmount(),

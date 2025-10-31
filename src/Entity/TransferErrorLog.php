@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Entity;
 
 use CreditBundle\Repository\TransferErrorLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 
 #[ORM\Entity(repositoryClass: TransferErrorLogRepository::class, readOnly: true)]
@@ -16,45 +19,66 @@ class TransferErrorLog implements \Stringable
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER, options: ['comment' => 'ID'])]
-    private ?int $id = 0;
+    private int $id = 0;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '上下文'])]
+    #[Assert\Type(type: 'array')]
     private ?array $context = [];
 
     #[ORM\Column(type: Types::BIGINT, options: ['comment' => '转出账号ID'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
     private ?string $fromAccountId = null;
 
     #[ORM\Column(length: 120, options: ['comment' => '转出账号名'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 120)]
     private ?string $fromAccountName = null;
 
     #[ORM\Column(type: Types::BIGINT, options: ['comment' => '转入账号ID'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
     private ?string $toAccountId = null;
 
     #[ORM\Column(length: 120, options: ['comment' => '转入账号名'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 120)]
     private ?string $toAccountName = null;
 
     #[ORM\Column(length: 10, options: ['comment' => '货币'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 10)]
     private ?string $currency = null;
 
     #[ORM\Column(nullable: true, options: ['comment' => '数值'])]
+    #[Assert\PositiveOrZero]
     private ?float $amount = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true, options: ['comment' => '异常'])]
+    #[Assert\Type(type: 'string')]
+    #[Assert\Length(max: 65535)]
     private ?string $exception = null;
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getContext(): ?array
     {
         return $this->context;
     }
 
-    public function setContext(?array $context): self
+    /**
+     * @param array<string, mixed>|null $context
+     */
+    public function setContext(?array $context): void
     {
         $this->context = $context;
-
-        return $this;
     }
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
@@ -64,11 +88,9 @@ class TransferErrorLog implements \Stringable
         return $this->fromAccountId;
     }
 
-    public function setFromAccountId(string $fromAccountId): static
+    public function setFromAccountId(string $fromAccountId): void
     {
         $this->fromAccountId = $fromAccountId;
-
-        return $this;
     }
 
     public function getFromAccountName(): ?string
@@ -76,11 +98,9 @@ class TransferErrorLog implements \Stringable
         return $this->fromAccountName;
     }
 
-    public function setFromAccountName(string $fromAccountName): static
+    public function setFromAccountName(string $fromAccountName): void
     {
         $this->fromAccountName = $fromAccountName;
-
-        return $this;
     }
 
     public function getToAccountId(): ?string
@@ -88,11 +108,9 @@ class TransferErrorLog implements \Stringable
         return $this->toAccountId;
     }
 
-    public function setToAccountId(string $toAccountId): static
+    public function setToAccountId(string $toAccountId): void
     {
         $this->toAccountId = $toAccountId;
-
-        return $this;
     }
 
     public function getToAccountName(): ?string
@@ -100,11 +118,9 @@ class TransferErrorLog implements \Stringable
         return $this->toAccountName;
     }
 
-    public function setToAccountName(string $toAccountName): static
+    public function setToAccountName(string $toAccountName): void
     {
         $this->toAccountName = $toAccountName;
-
-        return $this;
     }
 
     public function getCurrency(): ?string
@@ -112,11 +128,9 @@ class TransferErrorLog implements \Stringable
         return $this->currency;
     }
 
-    public function setCurrency(string $currency): static
+    public function setCurrency(string $currency): void
     {
         $this->currency = $currency;
-
-        return $this;
     }
 
     public function getAmount(): ?float
@@ -124,11 +138,9 @@ class TransferErrorLog implements \Stringable
         return $this->amount;
     }
 
-    public function setAmount(?float $amount): static
+    public function setAmount(?float $amount): void
     {
         $this->amount = $amount;
-
-        return $this;
     }
 
     public function getException(): ?string
@@ -136,11 +148,9 @@ class TransferErrorLog implements \Stringable
         return $this->exception;
     }
 
-    public function setException(?string $exception): static
+    public function setException(?string $exception): void
     {
         $this->exception = $exception;
-
-        return $this;
     }
 
     public function __toString(): string

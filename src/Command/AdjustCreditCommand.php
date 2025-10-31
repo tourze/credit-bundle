@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Command;
 
 use Carbon\CarbonImmutable;
@@ -7,6 +9,7 @@ use CreditBundle\Entity\Account;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -14,9 +17,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: self::NAME, description: '通过流水调整积分')]
+#[WithMonologChannel(channel: 'credit')]
 class AdjustCreditCommand extends Command
 {
     public const NAME = 'credit:adjust';
+
     public function __construct(
         private readonly AccountRepository $accountRepository,
         private readonly TransactionRepository $transactionRepository,
@@ -32,14 +37,15 @@ class AdjustCreditCommand extends Command
             ->where('a.updateTime > :updateTime')
             ->setParameter('updateTime', CarbonImmutable::now()->subDays())
             ->getQuery()
-            ->toIterable();
+            ->toIterable()
+        ;
 
         /** @var Account $account */
         foreach ($accountIterator as $account) {
             $endingBalance = (float) ($account->getEndingBalance() ?? 0);
             $increasedAmount = (float) ($account->getIncreasedAmount() ?? 0);
             $decreasedAmount = (float) ($account->getDecreasedAmount() ?? 0);
-            if ($endingBalance == $increasedAmount - $decreasedAmount) {
+            if ($endingBalance === $increasedAmount - $decreasedAmount) {
                 continue;
             }
 
@@ -50,17 +56,22 @@ class AdjustCreditCommand extends Command
                 'DecreasedAmount' => $account->getDecreasedAmount(),
             ]);
             $result = $this->transactionRepository->createQueryBuilder('t')
-                ->select('SUM(CASE WHEN t.amount >= 0 THEN t.amount ELSE 0 END) AS increase, 
-                              SUM(CASE WHEN t.amount < 0 THEN t.amount ELSE 0 END) AS decrease, 
+                ->select('SUM(CASE WHEN t.amount >= 0 THEN t.amount ELSE 0 END) AS increase,
+                              SUM(CASE WHEN t.amount < 0 THEN t.amount ELSE 0 END) AS decrease,
                               SUM(t.amount) AS balance')
                 ->where('t.account = :account')
                 ->setParameter('account', $account)
                 ->getQuery()
-                ->getSingleResult();
+                ->getSingleResult()
+            ;
 
-            $increase = isset($result['increase']) ? abs($result['increase']) : 0;
-            $decrease = isset($result['decrease']) ? abs($result['decrease']) : 0;
-            $balance = isset($result['balance']) ? abs($result['balance']) : 0;
+            if (!is_array($result)) {
+                continue;
+            }
+
+            $increase = isset($result['increase']) && is_numeric($result['increase']) ? abs((float) $result['increase']) : 0.0;
+            $decrease = isset($result['decrease']) && is_numeric($result['decrease']) ? abs((float) $result['decrease']) : 0.0;
+            $balance = isset($result['balance']) && is_numeric($result['balance']) ? abs((float) $result['balance']) : 0.0;
 
             $account->setEndingBalance(abs($balance));
             $account->setIncreasedAmount(abs($increase));

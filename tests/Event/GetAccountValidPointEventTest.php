@@ -4,22 +4,30 @@ declare(strict_types=1);
 
 namespace CreditBundle\Tests\Event;
 
+use CreditBundle\Entity\Account;
 use CreditBundle\Event\GetAccountValidPointEvent;
-use CreditBundle\Tests\AbstractTestCase;
+use CreditBundle\Tests\TestDataFactory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitSymfonyUnitTest\AbstractEventTestCase;
 
-class GetAccountValidPointEventTest extends AbstractTestCase
+/**
+ * @internal
+ */
+#[CoversClass(GetAccountValidPointEvent::class)]
+final class GetAccountValidPointEventTest extends AbstractEventTestCase
 {
     public function testBasicEventCreation(): void
     {
         $event = new GetAccountValidPointEvent();
 
-        self::assertInstanceOf(GetAccountValidPointEvent::class, $event);
+        // 测试事件初始状态
         self::assertNull($event->getResult());
     }
 
     public function testEventWithAccount(): void
     {
-        $account = $this->createMock(\CreditBundle\Entity\Account::class);
+        // 使用真实的 Account 对象而不是 Mock
+        $account = TestDataFactory::createAccount('Test Account for ValidPoint Event');
         $event = new GetAccountValidPointEvent();
 
         $event->setAccount($account);
@@ -30,7 +38,8 @@ class GetAccountValidPointEventTest extends AbstractTestCase
 
     public function testEventWithResult(): void
     {
-        $account = $this->createMock(\CreditBundle\Entity\Account::class);
+        // 使用真实的 Account 对象而不是 Mock
+        $account = TestDataFactory::createAccount('Test Account with Result');
         $event = new GetAccountValidPointEvent();
 
         $event->setAccount($account);

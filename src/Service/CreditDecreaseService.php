@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Service;
 
 use CreditBundle\Entity\Account;
@@ -7,31 +9,36 @@ use CreditBundle\Entity\Transaction;
 use CreditBundle\Event\DecreasedEvent;
 use CreditBundle\Exception\CreditInsufficientException;
 use CreditBundle\Exception\InvalidAmountException;
+use CreditBundle\Exception\TransactionException;
 use CreditBundle\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Tourze\JsonRPC\Core\Exception\ApiException;
 use Tourze\LockServiceBundle\Service\LockService;
 
 /**
  * 积分减少服务
  */
-#[Autoconfigure(lazy: true, public: true)]
-class CreditDecreaseService
+#[Autoconfigure(public: true)]
+readonly class CreditDecreaseService
 {
     public function __construct(
-        private readonly AccountService $accountService,
-        private readonly ConsumeLogService $consumeLogService,
-        private readonly TransactionRepository $transactionRepository,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly TransactionLimitService $limitService,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly LockService $lockService,
-    ) {}
+        private AccountService $accountService,
+        private ConsumeLogService $consumeLogService,
+        private TransactionRepository $transactionRepository,
+        private EntityManagerInterface $entityManager,
+        private TransactionLimitService $limitService,
+        private EventDispatcherInterface $eventDispatcher,
+        private LockService $lockService,
+    ) {
+    }
 
     /**
      * 扣减积分
+     *
+     * @param array<string, mixed>|null $context
+     *
+     * 不考虑并发 - 此方法通过executeDecrease调用，已在executeDecrease中使用LockService加锁
      */
     public function decrease(
         string $eventNo,
@@ -63,6 +70,8 @@ class CreditDecreaseService
 
     /**
      * 回滚积分
+     *
+     * @param array<string, mixed>|null $context
      */
     public function rollback(
         string $eventNo,
@@ -94,13 +103,17 @@ class CreditDecreaseService
 
     /**
      * 处理远程扣减事件
+     *
+     * @param array<string, mixed>|null $context
+     *
+     * 不考虑并发 - 此方法仅进行事件分发，无共享状态修改
      */
     private function processRemoteDecrease(
         string $eventNo,
         Account $account,
         float $amount,
         ?string $remark,
-        ?array $context
+        ?array $context,
     ): bool {
         $event = new DecreasedEvent();
         $event->setAmount($amount);
@@ -115,10 +128,12 @@ class CreditDecreaseService
 
     /**
      * 验证用户积分是否充足
+     *
+     * 不考虑并发 - 此方法仅进行读取验证，调用方会在更高层加锁
      */
     private function validateUserCredit(Account $account): void
     {
-        if ($account->getUser() !== null) {
+        if (null !== $account->getUser()) {
             $validAmount = $this->accountService->getValidAmount($account);
             if ($validAmount <= 0) {
                 throw new CreditInsufficientException($account . ' 积分不足');
@@ -135,11 +150,14 @@ class CreditDecreaseService
         if ($costAmount <= 0) {
             throw new InvalidAmountException('扣减积分异常');
         }
+
         return $costAmount;
     }
 
     /**
      * 执行扣减操作
+     *
+     * @param array<string, mixed>|null $context
      */
     private function executeDecrease(
         Account $account,
@@ -151,8 +169,8 @@ class CreditDecreaseService
         ?array $context,
         bool $isExpired,
     ): void {
-        $this->lockService->blockingRun($account, function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $isExpired) {
-            $this->entityManager->getConnection()->transactional(function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $isExpired) {
+        $this->lockService->blockingRun($account, function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $isExpired): void {
+            $this->entityManager->getConnection()->transactional(function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $isExpired): void {
                 $this->entityManager->refresh($account);
 
                 // 创建交易记录
@@ -171,6 +189,10 @@ class CreditDecreaseService
 
     /**
      * 创建扣减交易记录
+     *
+     * @param array<string, mixed>|null $context
+     *
+     * 不考虑并发 - 此方法仅用于创建Transaction对象，无状态修改
      */
     private function createDecreaseTransaction(
         Account $account,
@@ -185,7 +207,7 @@ class CreditDecreaseService
         $transaction->setCurrency($account->getCurrency());
         $transaction->setEventNo($eventNo);
         $transaction->setAccount($account);
-        $transaction->setAmount((string)(-$costAmount));
+        $transaction->setAmount((string) (-$costAmount));
         $transaction->setRemark($remark);
         $transaction->setRelationModel($relationModel);
         $transaction->setRelationId($relationId);
@@ -197,13 +219,15 @@ class CreditDecreaseService
 
     /**
      * 更新账户余额
+     *
+     * 不考虑并发 - 上层decrease方法已通过LockService加锁控制并发
      */
     private function updateAccountBalance(Account $account, float $costAmount, bool $isExpired): void
     {
-        $account->setEndingBalance((string)((float)$account->getEndingBalance() - $costAmount));
-        $account->setDecreasedAmount((string)((float)$account->getDecreasedAmount() + $costAmount));
+        $account->setEndingBalance((string) ((float) $account->getEndingBalance() - $costAmount));
+        $account->setDecreasedAmount((string) ((float) $account->getDecreasedAmount() + $costAmount));
         if ($isExpired) {
-            $account->setExpiredAmount((string)((float)$account->getExpiredAmount() + $costAmount));
+            $account->setExpiredAmount((string) ((float) $account->getExpiredAmount() + $costAmount));
         }
         $this->entityManager->persist($account);
     }
@@ -214,12 +238,12 @@ class CreditDecreaseService
     private function findOriginalTransaction(string $eventNo, Account $account, float $amount): Transaction
     {
         $oldTransaction = $this->transactionRepository->findOneBy(['eventNo' => $eventNo, 'account' => $account]);
-        if ($oldTransaction === null) {
-            throw new ApiException('未查询到对应事件积分');
+        if (null === $oldTransaction) {
+            throw new TransactionException('未查询到对应事件积分');
         }
 
-        if ($oldTransaction->getBalance() != $amount) {
-            throw new ApiException('数值异常');
+        if ($oldTransaction->getBalance() !== $amount) {
+            throw new TransactionException('数值异常');
         }
 
         return $oldTransaction;
@@ -227,6 +251,8 @@ class CreditDecreaseService
 
     /**
      * 执行回滚操作
+     *
+     * @param array<string, mixed>|null $context
      */
     private function executeRollback(
         Account $account,
@@ -238,8 +264,8 @@ class CreditDecreaseService
         ?array $context,
         Transaction $oldTransaction,
     ): void {
-        $this->lockService->blockingRun($account, function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $oldTransaction) {
-            $this->entityManager->getConnection()->transactional(function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $oldTransaction) {
+        $this->lockService->blockingRun($account, function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $oldTransaction): void {
+            $this->entityManager->getConnection()->transactional(function () use ($account, $eventNo, $costAmount, $remark, $relationModel, $relationId, $context, $oldTransaction): void {
                 $this->entityManager->refresh($account);
 
                 // 创建回滚交易记录
@@ -251,13 +277,15 @@ class CreditDecreaseService
                 $this->entityManager->flush();
 
                 // 记录消费日志
-                $this->consumeLogService->saveConsumeLog($oldTransaction, $transaction, (float)$oldTransaction->getBalance());
+                $this->consumeLogService->saveConsumeLog($oldTransaction, $transaction, (float) $oldTransaction->getBalance());
             });
         });
     }
 
     /**
      * 创建回滚交易记录
+     *
+     * @param array<string, mixed>|null $context
      */
     private function createRollbackTransaction(
         Account $account,
@@ -272,7 +300,7 @@ class CreditDecreaseService
         $transaction->setCurrency($account->getCurrency());
         $transaction->setEventNo("{$eventNo}_rollback");
         $transaction->setAccount($account);
-        $transaction->setAmount((string)$costAmount);
+        $transaction->setAmount((string) $costAmount);
         $transaction->setRemark($remark);
         $transaction->setRelationModel($relationModel);
         $transaction->setRelationId($relationId);
@@ -284,11 +312,13 @@ class CreditDecreaseService
 
     /**
      * 更新回滚账户余额
+     *
+     * 不考虑并发 - 上层decrease方法已通过LockService加锁控制并发
      */
     private function updateRollbackAccountBalance(Account $account, float $costAmount): void
     {
-        $account->setEndingBalance((string)((float)$account->getEndingBalance() - $costAmount));
-        $account->setDecreasedAmount((string)((float)$account->getDecreasedAmount() + $costAmount));
+        $account->setEndingBalance((string) ((float) $account->getEndingBalance() - $costAmount));
+        $account->setDecreasedAmount((string) ((float) $account->getDecreasedAmount() + $costAmount));
         $this->entityManager->persist($account);
     }
 }

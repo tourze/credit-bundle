@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Model;
 
 use CreditBundle\Entity\Transaction;
@@ -11,30 +13,15 @@ use CreditBundle\Entity\Transaction;
 class ConsumptionPreview
 {
     /**
-     * @var Transaction[] 可消费的积分记录
+     * @param Transaction[] $records     可消费的积分记录
+     * @param bool          $needsMerge  是否需要合并
+     * @param int           $recordCount 记录总数
      */
-    private array $records;
-
-    /**
-     * @var bool 是否需要合并小额积分
-     */
-    private bool $needsMerge;
-
-    /**
-     * @var int 记录总数
-     */
-    private int $recordCount;
-
-    /**
-     * @param Transaction[] $records 可消费的积分记录
-     * @param bool $needsMerge 是否需要合并
-     * @param int $recordCount 记录总数
-     */
-    public function __construct(array $records, bool $needsMerge, int $recordCount)
-    {
-        $this->records = $records;
-        $this->needsMerge = $needsMerge;
-        $this->recordCount = $recordCount;
+    public function __construct(
+        private readonly array $records,
+        private readonly bool $needsMerge,
+        private readonly int $recordCount,
+    ) {
     }
 
     /**
@@ -45,17 +32,11 @@ class ConsumptionPreview
         return $this->records;
     }
 
-    /**
-     * @return bool
-     */
     public function needsMerge(): bool
     {
         return $this->needsMerge;
     }
 
-    /**
-     * @return int
-     */
     public function getRecordCount(): int
     {
         return $this->recordCount;

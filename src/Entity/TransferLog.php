@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Entity;
 
 use CreditBundle\Repository\TransferLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
-use Tourze\DoctrineIpBundle\Attribute\UpdateIpColumn;
+use Tourze\DoctrineIpBundle\Traits\IpTraceableAware;
 use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 use Tourze\DoctrineUserBundle\Traits\BlameableAware;
@@ -20,8 +22,11 @@ class TransferLog implements \Stringable
     use TimestampableAware;
     use BlameableAware;
     use SnowflakeKeyAware;
+    use IpTraceableAware;
 
     #[ORM\Column(type: Types::STRING, length: 20, options: ['comment' => '币种'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
     private ?string $currency = null;
 
     #[ORM\ManyToOne(targetEntity: Account::class, fetch: 'EXTRA_LAZY')]
@@ -30,6 +35,9 @@ class TransferLog implements \Stringable
 
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::DECIMAL, precision: 20, scale: 6, options: ['comment' => '转出金额'])]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
+    #[Assert\Length(max: 27)]
     private ?string $outAmount = null;
 
     #[ORM\ManyToOne(targetEntity: Account::class, fetch: 'EXTRA_LAZY')]
@@ -38,46 +46,41 @@ class TransferLog implements \Stringable
 
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::DECIMAL, precision: 20, scale: 6, options: ['comment' => '转入金额'])]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
+    #[Assert\Length(max: 27)]
     private ?string $inAmount = null;
 
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true, options: ['comment' => '备注'])]
+    #[Assert\Length(max: 100)]
     private ?string $remark = null;
 
     #[IndexColumn]
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::STRING, length: 120, nullable: true, options: ['comment' => '关联第三方id'])]
+    #[Assert\Length(max: 120)]
     private ?string $relationId = null;
 
     #[IndexColumn]
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::STRING, length: 200, nullable: true, options: ['comment' => '关联模型类'])]
+    #[Assert\Length(max: 200)]
     private ?string $relationModel = null;
 
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '过期时间'])]
+    #[Assert\Type(type: '\DateTimeImmutable')]
     private ?\DateTimeImmutable $expireTime = null;
-
-
-    #[CreateIpColumn]
-    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '创建时IP'])]
-    private ?string $createdFromIp = null;
-
-    #[UpdateIpColumn]
-    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '更新时IP'])]
-    private ?string $updatedFromIp = null;
-
 
     public function getRemark(): ?string
     {
         return $this->remark;
     }
 
-    public function setRemark(?string $remark): self
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
-
-        return $this;
     }
 
     public function getOutAccount(): ?Account
@@ -85,11 +88,9 @@ class TransferLog implements \Stringable
         return $this->outAccount;
     }
 
-    public function setOutAccount(?Account $outAccount): self
+    public function setOutAccount(?Account $outAccount): void
     {
         $this->outAccount = $outAccount;
-
-        return $this;
     }
 
     public function getCurrency(): ?string
@@ -97,11 +98,9 @@ class TransferLog implements \Stringable
         return $this->currency;
     }
 
-    public function setCurrency(string $currency): self
+    public function setCurrency(string $currency): void
     {
         $this->currency = $currency;
-
-        return $this;
     }
 
     public function getOutAmount(): ?string
@@ -109,11 +108,9 @@ class TransferLog implements \Stringable
         return $this->outAmount;
     }
 
-    public function setOutAmount(string $outAmount): self
+    public function setOutAmount(string $outAmount): void
     {
         $this->outAmount = $outAmount;
-
-        return $this;
     }
 
     public function getInAccount(): ?Account
@@ -121,11 +118,9 @@ class TransferLog implements \Stringable
         return $this->inAccount;
     }
 
-    public function setInAccount(?Account $inAccount): self
+    public function setInAccount(?Account $inAccount): void
     {
         $this->inAccount = $inAccount;
-
-        return $this;
     }
 
     public function getInAmount(): ?string
@@ -133,11 +128,9 @@ class TransferLog implements \Stringable
         return $this->inAmount;
     }
 
-    public function setInAmount(string $inAmount): self
+    public function setInAmount(string $inAmount): void
     {
         $this->inAmount = $inAmount;
-
-        return $this;
     }
 
     public function getExpireTime(): ?\DateTimeImmutable
@@ -145,7 +138,7 @@ class TransferLog implements \Stringable
         return $this->expireTime;
     }
 
-    public function setExpireTime(?\DateTimeInterface $expireTime): self
+    public function setExpireTime(?\DateTimeInterface $expireTime): void
     {
         if ($expireTime instanceof \DateTime) {
             $this->expireTime = \DateTimeImmutable::createFromMutable($expireTime);
@@ -154,8 +147,6 @@ class TransferLog implements \Stringable
         } else {
             $this->expireTime = null;
         }
-
-        return $this;
     }
 
     public function getRelationId(): ?string
@@ -176,30 +167,6 @@ class TransferLog implements \Stringable
     public function setRelationModel(?string $relationModel): void
     {
         $this->relationModel = $relationModel;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-
-        return $this;
-    }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setUpdatedFromIp(?string $updatedFromIp): self
-    {
-        $this->updatedFromIp = $updatedFromIp;
-
-        return $this;
-    }
-
-    public function getUpdatedFromIp(): ?string
-    {
-        return $this->updatedFromIp;
     }
 
     public function __toString(): string

@@ -4,4 +4,6 @@ declare(strict_types=1);
 
 namespace CreditBundle\Exception;
 
-class AccountCreationException extends \RuntimeException {}
+class AccountCreationException extends \RuntimeException
+{
+}

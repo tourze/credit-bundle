@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Event;
 
 use CreditBundle\Entity\Account;
@@ -15,6 +17,9 @@ class DecreasedEvent extends Event
 
     private string $eventNo;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     private ?array $context = null;
 
     private bool $localExecute = true;
@@ -59,11 +64,17 @@ class DecreasedEvent extends Event
         $this->eventNo = $eventNo;
     }
 
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getContext(): ?array
     {
         return $this->context;
     }
 
+    /**
+     * @param array<string, mixed>|null $context
+     */
     public function setContext(?array $context): void
     {
         $this->context = $context;

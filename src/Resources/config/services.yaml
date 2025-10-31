@@ -7,11 +7,14 @@ services:
 
   CreditBundle\Command\:
     resource: '../../Command/'
-  CreditBundle\EventListener\:
-    resource: '../../EventListener/'
+  CreditBundle\Controller\:
+    resource: '../../Controller/'
   CreditBundle\Procedure\:
     resource: '../../Procedure/'
   CreditBundle\Repository\:
     resource: '../../Repository/'
   CreditBundle\Service\:
     resource: '../../Service/'
+  
+  # AdminMenu 服务
+  CreditBundle\AdminMenu: ~

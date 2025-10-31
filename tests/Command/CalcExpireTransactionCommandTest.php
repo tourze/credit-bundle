@@ -1,31 +1,62 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Tests\Command;
 
 use CreditBundle\Command\CalcExpireTransactionCommand;
-use CreditBundle\Repository\AccountRepository;
-use CreditBundle\Repository\TransactionRepository;
-use CreditBundle\Service\TransactionService;
-use PHPUnit\Framework\TestCase;
-use Tourze\SnowflakeBundle\Service\Snowflake;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractCommandTestCase;
 
-class CalcExpireTransactionCommandTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(CalcExpireTransactionCommand::class)]
+#[RunTestsInSeparateProcesses]
+final class CalcExpireTransactionCommandTest extends AbstractCommandTestCase
 {
+    private CommandTester $commandTester;
+
+    protected function getCommandTester(): CommandTester
+    {
+        return $this->commandTester;
+    }
+
+    protected function onSetUp(): void
+    {
+        $command = self::getContainer()->get(CalcExpireTransactionCommand::class);
+        $this->assertInstanceOf(Command::class, $command);
+
+        $application = new Application();
+        $application->add($command);
+
+        $command = $application->find('credit:calc:expire-transaction');
+        $this->commandTester = new CommandTester($command);
+    }
+
     public function testConstruct(): void
     {
-        $accountRepository = $this->createMock(AccountRepository::class);
-        $transactionRepository = $this->createMock(TransactionRepository::class);
-        $transactionService = $this->createMock(TransactionService::class);
-        $snowflake = $this->createMock(Snowflake::class);
-        
-        $command = new CalcExpireTransactionCommand(
-            $accountRepository,
-            $transactionRepository,
-            $transactionService,
-            $snowflake
-        );
-        
+        $command = self::getContainer()->get(CalcExpireTransactionCommand::class);
+
         $this->assertInstanceOf(CalcExpireTransactionCommand::class, $command);
         $this->assertEquals('credit:calc:expire-transaction', CalcExpireTransactionCommand::NAME);
     }
-} 
+
+    public function testArgumentAccountId(): void
+    {
+        $exitCode = $this->commandTester->execute(['accountId' => '999']);
+
+        $this->assertEquals(Command::INVALID, $exitCode);
+    }
+
+    public function testExecuteWithInvalidAccountIdReturnsInvalid(): void
+    {
+        $exitCode = $this->commandTester->execute(['accountId' => '999']);
+
+        $this->assertEquals(Command::INVALID, $exitCode);
+    }
+}

@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Command;
 
 use Carbon\CarbonImmutable;
+use CreditBundle\Entity\Account;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Model\TransactionParticipant;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use CreditBundle\Service\TransactionService;
-use Doctrine\Common\Collections\Criteria;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -33,15 +35,27 @@ class CalcExpireTransactionCommand extends Command
     protected function configure(): void
     {
         $this->setDescription('结算account')
-            ->addArgument('accountId', InputArgument::REQUIRED);
+            ->addArgument('accountId', InputArgument::REQUIRED)
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $account = $this->accountRepository->find($input->getArgument('accountId'));
-        if ($account === null) {
+        $accountId = $input->getArgument('accountId');
+        if (!is_string($accountId) && !is_numeric($accountId)) {
+            $output->writeln('Invalid account ID provided');
+
             return Command::INVALID;
         }
+
+        $account = $this->accountRepository->find($accountId);
+        if (null === $account) {
+            $output->writeln('Account not found');
+
+            return Command::INVALID;
+        }
+
+        assert($account instanceof Account);
 
         // 增加的积分才需要过期处理
         $transactions = $this->transactionRepository->createQueryBuilder('a')
@@ -52,14 +66,26 @@ class CalcExpireTransactionCommand extends Command
             ->andWhere('a.expireTime <= :now')
             ->setParameter('account', $account)
             ->setParameter('now', CarbonImmutable::now())
-            ->orderBy('a.id', Criteria::ASC)
+            ->orderBy('a.id', 'ASC')
             ->getQuery()
-            ->getResult();
+            ->getResult()
+        ;
 
-        $costAmount = 0;
+        if (!is_array($transactions)) {
+            $output->writeln('Failed to retrieve transactions');
+
+            return Command::FAILURE;
+        }
+
+        $costAmount = 0.0;
         foreach ($transactions as $transaction) {
-            /** @var Transaction $transaction */
-            $costAmount += $transaction->getBalance();
+            if (!$transaction instanceof Transaction) {
+                continue;
+            }
+            $balance = $transaction->getBalance();
+            if (is_numeric($balance)) {
+                $costAmount += (float) $balance;
+            }
         }
         $costAmount = abs($costAmount);
         $output->writeln('$costAmount:' . $costAmount);

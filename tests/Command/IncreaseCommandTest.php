@@ -5,32 +5,77 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Command;
 
 use CreditBundle\Command\IncreaseCommand;
-use CreditBundle\Service\AccountService;
-use CreditBundle\Service\CurrencyService;
-use CreditBundle\Service\TransactionService;
-use PHPUnit\Framework\TestCase;
-use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
-use Tourze\SnowflakeBundle\Service\Snowflake;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Exception\RuntimeException;
+use Symfony\Component\Console\Tester\CommandTester;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractCommandTestCase;
 
-class IncreaseCommandTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(IncreaseCommand::class)]
+#[RunTestsInSeparateProcesses]
+final class IncreaseCommandTest extends AbstractCommandTestCase
 {
+    private CommandTester $commandTester;
+
+    protected function getCommandTester(): CommandTester
+    {
+        return $this->commandTester;
+    }
+
+    protected function onSetUp(): void
+    {
+        $command = self::getContainer()->get(IncreaseCommand::class);
+        $this->assertInstanceOf(Command::class, $command);
+
+        $application = new Application();
+        $application->add($command);
+
+        $command = $application->find('credit:increase');
+        $this->commandTester = new CommandTester($command);
+    }
+
     public function testConstruct(): void
     {
-        $userLoader = $this->createMock(UserLoaderInterface::class);
-        $accountService = $this->createMock(AccountService::class);
-        $currencyService = $this->createMock(CurrencyService::class);
-        $transactionService = $this->createMock(TransactionService::class);
-        $snowflake = $this->createMock(Snowflake::class);
-        
-        $command = new IncreaseCommand(
-            $userLoader,
-            $accountService,
-            $currencyService,
-            $transactionService,
-            $snowflake
-        );
-        
+        $command = self::getContainer()->get(IncreaseCommand::class);
+
         $this->assertInstanceOf(IncreaseCommand::class, $command);
         $this->assertEquals('credit:increase', IncreaseCommand::NAME);
     }
-} 
+
+    public function testArgumentCurrency(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Not enough arguments');
+
+        $this->commandTester->execute([]);
+    }
+
+    public function testArgumentUserId(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Not enough arguments');
+
+        $this->commandTester->execute([]);
+    }
+
+    public function testArgumentAmount(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Not enough arguments');
+
+        $this->commandTester->execute([]);
+    }
+
+    public function testExecuteWithCommandTester(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Not enough arguments');
+
+        $this->commandTester->execute([]);
+    }
+}

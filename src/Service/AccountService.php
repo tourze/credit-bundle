@@ -5,31 +5,32 @@ declare(strict_types=1);
 namespace CreditBundle\Service;
 
 use CreditBundle\Entity\Account;
-use CreditBundle\Entity\Currency;
 use CreditBundle\Event\GetAccountValidPointEvent;
 use CreditBundle\Exception\AccountCreationException;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Tourze\LockServiceBundle\Service\LockService;
 
-#[Autoconfigure(lazy: true)]
-class AccountService
+#[WithMonologChannel(channel: 'credit')]
+readonly class AccountService
 {
     public function __construct(
-        private readonly AccountRepository $accountRepository,
-        private readonly LoggerInterface $logger,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly TransactionRepository $transactionRepository,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly LockService $lockService,
-    ) {}
+        private AccountRepository $accountRepository,
+        private LoggerInterface $logger,
+        private EventDispatcherInterface $eventDispatcher,
+        private TransactionRepository $transactionRepository,
+        private EntityManagerInterface $entityManager,
+        private LockService $lockService,
+    ) {
+    }
 
-    public function getSystemAccount(Currency $currency): Account
+    public function getSystemAccount(string $currency): Account
     {
         return $this->getAccountByName('system', $currency);
     }
@@ -37,18 +38,18 @@ class AccountService
     /**
      * 获取指定用户的指定账号
      */
-    public function getAccountByUser(UserInterface $user, Currency $currency): Account
+    public function getAccountByUser(UserInterface $user, string $currency): Account
     {
         $account = $this->accountRepository->findOneBy([
             'user' => $user,
             'currency' => $currency,
         ]);
-        if ($account === null) {
+        if (null === $account) {
             $account = new Account();
             $account->setUser($user);
             $account->setCurrency($currency);
             $userIdentifier = $user->getUserIdentifier();
-            $account->setName("用户{$userIdentifier}的{$currency->getName()}账户");
+            $account->setName("用户{$userIdentifier}的{$currency}账户");
             $this->entityManager->persist($account);
             $this->entityManager->flush();
         }
@@ -59,63 +60,103 @@ class AccountService
     /**
      * 获取指定名称的指定账号
      */
-    public function getAccountByName(string $name, Currency $currency, ?UserInterface $user = null): Account
+    public function getAccountByName(string $name, string $currency, ?UserInterface $user = null): Account
+    {
+        $condition = $this->buildAccountCondition($name, $currency, $user);
+
+        $account = $this->accountRepository->findOneBy($condition);
+        if (null !== $account) {
+            return $account;
+        }
+
+        return $this->createAccountWithLock($name, $currency, $user, $condition);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildAccountCondition(string $name, string $currency, ?UserInterface $user): array
     {
         $condition = [
             'name' => $name,
             'currency' => $currency,
         ];
-        if ($user !== null) {
+        if (null !== $user) {
             $condition['user'] = $user;
         }
 
-        // 先尝试查找账号是否存在
-        $account = $this->accountRepository->findOneBy($condition);
-        if ($account !== null) {
-            return $account;
-        }
+        return $condition;
+    }
 
-        // 使用锁确保在并发环境下只有一个进程创建账号
-        $lockName = "account_creation_{$name}_{$currency->getId()}" . ($user !== null ? "_{$user->getUserIdentifier()}" : '');
+    /**
+     * @param array<string, mixed> $condition
+     */
+    private function createAccountWithLock(string $name, string $currency, ?UserInterface $user, array $condition): Account
+    {
+        $lockName = $this->buildLockName($name, $currency, $user);
         $lockAcquired = $this->lockService->acquireLock($lockName);
 
         if (!$lockAcquired->isAcquired()) {
-            $this->logger->warning('获取账号创建锁失败', [
-                'currency' => $currency,
-                'name' => $name,
-                'user' => $user,
-            ]);
-            // 锁获取失败，再次尝试查找账号（可能已被其他进程创建）
-            $account = $this->accountRepository->findOneBy($condition);
-            if ($account === null) {
-                throw new AccountCreationException('无法创建账号，获取锁失败');
-            }
-            return $account;
+            return $this->handleLockFailure($condition);
         }
 
         try {
-            // 获得锁后再次检查账号是否存在（双重检查锁定模式）
-            $account = $this->accountRepository->findOneBy($condition);
-            if ($account === null) {
-                // 创建新账号
-                $account = new Account();
-                $account->setName($name);
-                $account->setCurrency($currency);
-                if ($user !== null) {
-                    $account->setUser($user);
-                }
-                $this->entityManager->persist($account);
-                $this->entityManager->flush();
-                $this->logger->info('成功创建账号', [
-                    'currency' => $currency->getName(),
-                    'name' => $name,
-                    'user' => $user?->getUserIdentifier(),
-                ]);
-            }
+            return $this->createAccountIfNotExists($name, $currency, $user, $condition);
         } finally {
-            // 无论成功失败，最后都释放锁
             $this->lockService->releaseLock($lockName);
         }
+    }
+
+    private function buildLockName(string $name, string $currency, ?UserInterface $user): string
+    {
+        $lockName = "account_creation_{$name}_{$currency}";
+        if (null !== $user) {
+            $lockName .= "_{$user->getUserIdentifier()}";
+        }
+
+        return $lockName;
+    }
+
+    /**
+     * @param array<string, mixed> $condition
+     */
+    private function handleLockFailure(array $condition): Account
+    {
+        $this->logger->warning('获取账号创建锁失败', $condition);
+
+        $account = $this->accountRepository->findOneBy($condition);
+        if (null === $account) {
+            throw new AccountCreationException('无法创建账号，获取锁失败');
+        }
+
+        return $account;
+    }
+
+    /**
+     * @param array<string, mixed> $condition
+     */
+    private function createAccountIfNotExists(string $name, string $currency, ?UserInterface $user, array $condition): Account
+    {
+        $account = $this->accountRepository->findOneBy($condition);
+        if (null !== $account) {
+            return $account;
+        }
+
+        $account = new Account();
+        $account->setName($name);
+        $account->setCurrency($currency);
+        if (null !== $user) {
+            $account->setUser($user);
+        }
+
+        $this->entityManager->persist($account);
+        $this->entityManager->flush();
+
+        $this->logger->info('成功创建账号', [
+            'currency' => $currency,
+            'name' => $name,
+            'user' => $user?->getUserIdentifier(),
+        ]);
 
         return $account;
     }
@@ -157,13 +198,16 @@ class AccountService
             ->setParameter('start', $startTime)
             ->setParameter('end', $endTime)
             ->getQuery()
-            ->getSingleScalarResult();
+            ->getSingleScalarResult()
+        ;
 
         return floatval($rs);
     }
 
     /**
      * （实时）计算指定用户的总积分，包含历史获得积分
+     *
+     * 不考虑并发 - 此方法仅进行数据读取，无状态修改
      */
     public function sumIncreasedAmount(Account $account): float
     {

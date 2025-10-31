@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Service;
 
 use CreditBundle\Entity\ConsumeLog;
@@ -12,16 +14,19 @@ use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 /**
  * 消费日志服务
  */
-#[Autoconfigure(lazy: true, public: true)]
-class ConsumeLogService
+#[Autoconfigure(public: true)]
+readonly class ConsumeLogService
 {
     public function __construct(
-        private readonly TransactionRepository $transactionRepository,
-        private readonly EntityManagerInterface $entityManager,
-    ) {}
+        private TransactionRepository $transactionRepository,
+        private EntityManagerInterface $entityManager,
+    ) {
+    }
 
     /**
      * 保存消费日志并更新交易记录余额
+     *
+     * 不考虑并发 - 此方法由上层扣减服务在事务中调用，已在上层加锁
      */
     public function saveConsumeLog(Transaction $record, Transaction $transaction, float $costPer): void
     {
@@ -29,11 +34,11 @@ class ConsumeLogService
         $consumeLog = new ConsumeLog();
         $consumeLog->setCostTransaction($record);
         $consumeLog->setConsumeTransaction($transaction);
-        $consumeLog->setAmount((string)$costPer);
+        $consumeLog->setAmount((string) $costPer);
         $this->entityManager->persist($consumeLog);
 
         // 更新数据
-        $record->setBalance((string)((float)$record->getBalance() - $costPer));
+        $record->setBalance((string) ((float) $record->getBalance() - $costPer));
         $this->entityManager->persist($record);
 
         $this->entityManager->flush();
@@ -41,6 +46,8 @@ class ConsumeLogService
 
     /**
      * 批量消费积分
+     *
+     * 不考虑并发 - 此方法由上层扣减服务在事务中调用，已在上层加锁
      */
     public function consumeCredits(Transaction $transaction, float $costAmount): void
     {
@@ -50,7 +57,7 @@ class ConsumeLogService
             $costAmount
         );
 
-        if (empty($consumableRecords)) {
+        if ([] === $consumableRecords) {
             throw new ConsumeLogException('没有可消费的积分记录');
         }
 

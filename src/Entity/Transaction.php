@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Entity;
 
 use BenefitBundle\Model\BenefitResource;
@@ -10,27 +12,38 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Serializer\Attribute\Ignore;
+use Symfony\Component\Validator\Constraints as Assert;
 use Tourze\Arrayable\AdminArrayInterface;
 use Tourze\DoctrineIndexedBundle\Attribute\IndexColumn;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
+use Tourze\DoctrineIpBundle\Traits\CreatedFromIpAware;
 use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\TimestampableAware;
 
+/**
+ * @implements AdminArrayInterface<string, mixed>
+ */
 #[ORM\Entity(repositoryClass: TransactionRepository::class)]
 #[ORM\Table(name: 'ims_credit_account_transaction', options: ['comment' => '交易流水'])]
 #[ORM\UniqueConstraint(name: 'ims_credit_account_transaction_idx_uniq', columns: ['event_no', 'account_id'])]
-#[ORM\Index(columns: ['account_id', 'amount', 'balance', 'expire_time'], name: 'ims_credit_transaction_fifo_idx')]
-#[ORM\Index(columns: ['account_id', 'balance'], name: 'ims_credit_transaction_balance_idx')]
+#[ORM\Index(name: 'ims_credit_account_transaction_fifo_idx', columns: ['account_id', 'amount', 'balance', 'expire_time'])]
+#[ORM\Index(name: 'ims_credit_account_transaction_balance_idx', columns: ['account_id', 'balance'])]
 class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
 {
+    use CreatedFromIpAware;
     use TimestampableAware;
     use SnowflakeKeyAware;
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true, options: ['comment' => '上下文'])]
+    #[Assert\Type(type: 'array')]
     private ?array $context = [];
 
     #[IndexColumn]
     #[ORM\Column(length: 50, options: ['comment' => '事件编号'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 50)]
     private string $eventNo;
 
     #[ORM\ManyToOne(inversedBy: 'transactions')]
@@ -39,31 +52,39 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
 
     #[IndexColumn]
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, options: ['comment' => '变动流水'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 13)]
     private string $amount;
 
     #[IndexColumn]
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, nullable: true, options: ['comment' => '余额'])]
+    #[Assert\Length(max: 13)]
     private ?string $balance = null;
 
     #[ORM\Column(length: 100, nullable: true, options: ['comment' => '备注'])]
+    #[Assert\Length(max: 100)]
     private ?string $remark = null;
 
     #[IndexColumn]
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::STRING, length: 120, nullable: true, options: ['comment' => '关联第三方id'])]
+    #[Assert\Length(max: 120)]
     private ?string $relationId = null;
 
     #[IndexColumn]
     #[Groups(groups: ['restful_read'])]
     #[ORM\Column(type: Types::STRING, length: 200, nullable: true, options: ['comment' => '关联模型类'])]
+    #[Assert\Length(max: 200)]
     private ?string $relationModel = null;
 
-    #[ORM\ManyToOne(inversedBy: 'transactions')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Currency $currency = null;
+    #[ORM\Column(type: Types::STRING, length: 20, nullable: false, options: ['comment' => '币种代码'])]
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
+    private string $currency;
 
     #[IndexColumn]
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['comment' => '过期时间'])]
+    #[Assert\Type(type: '\DateTimeImmutable')]
     private ?\DateTimeImmutable $expireTime = null;
 
     /**
@@ -80,27 +101,26 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
     #[ORM\OneToMany(mappedBy: 'consumeTransaction', targetEntity: ConsumeLog::class)]
     private Collection $consumeLogs;
 
-    #[CreateIpColumn]
-    #[ORM\Column(length: 45, nullable: true, options: ['comment' => '创建时IP'])]
-    private ?string $createdFromIp = null;
-
     public function __construct()
     {
         $this->constLogs = new ArrayCollection();
         $this->consumeLogs = new ArrayCollection();
     }
 
-
+    /**
+     * @return array<string, mixed>|null
+     */
     public function getContext(): ?array
     {
         return $this->context;
     }
 
-    public function setContext(?array $context): self
+    /**
+     * @param array<string, mixed>|null $context
+     */
+    public function setContext(?array $context): void
     {
         $this->context = $context;
-
-        return $this;
     }
 
     public function getEventNo(): string
@@ -108,11 +128,9 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->eventNo;
     }
 
-    public function setEventNo(string $eventNo): static
+    public function setEventNo(string $eventNo): void
     {
         $this->eventNo = $eventNo;
-
-        return $this;
     }
 
     public function getAccount(): Account
@@ -120,11 +138,9 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->account;
     }
 
-    public function setAccount(Account $account): static
+    public function setAccount(Account $account): void
     {
         $this->account = $account;
-
-        return $this;
     }
 
     public function getAmount(): string
@@ -132,11 +148,9 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->amount;
     }
 
-    public function setAmount(string $amount): static
+    public function setAmount(string $amount): void
     {
         $this->amount = $amount;
-
-        return $this;
     }
 
     public function getBalance(): ?string
@@ -144,11 +158,9 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->balance;
     }
 
-    public function setBalance(?string $balance): static
+    public function setBalance(?string $balance): void
     {
         $this->balance = $balance;
-
-        return $this;
     }
 
     public function getRemark(): ?string
@@ -156,11 +168,9 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->remark;
     }
 
-    public function setRemark(?string $remark): static
+    public function setRemark(?string $remark): void
     {
         $this->remark = $remark;
-
-        return $this;
     }
 
     public function getRelationId(): ?string
@@ -183,6 +193,9 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         $this->relationModel = $relationModel;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function retrieveAdminArray(): array
     {
         return [
@@ -193,21 +206,19 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
             'account' => $this->getAccount()->retrieveAdminArray(),
             'amount' => $this->getAmount(),
             'remark' => $this->getRemark(),
-            'currency' => $this->getCurrency()->retrieveAdminArray(),
+            'currency' => $this->getCurrency(),
             'bizUser' => [],
         ];
     }
 
-    public function getCurrency(): ?Currency
+    public function getCurrency(): string
     {
         return $this->currency;
     }
 
-    public function setCurrency(?Currency $currency): static
+    public function setCurrency(string $currency): void
     {
         $this->currency = $currency;
-
-        return $this;
     }
 
     public function getExpireTime(): ?\DateTimeImmutable
@@ -215,7 +226,7 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->expireTime;
     }
 
-    public function setExpireTime(?\DateTimeInterface $expireTime): static
+    public function setExpireTime(?\DateTimeInterface $expireTime): void
     {
         if ($expireTime instanceof \DateTime) {
             $this->expireTime = \DateTimeImmutable::createFromMutable($expireTime);
@@ -224,8 +235,6 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         } else {
             $this->expireTime = null;
         }
-
-        return $this;
     }
 
     /**
@@ -236,17 +245,15 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->constLogs;
     }
 
-    public function addCostLog(ConsumeLog $consumeLog): static
+    public function addCostLog(ConsumeLog $consumeLog): void
     {
         if (!$this->constLogs->contains($consumeLog)) {
             $this->constLogs->add($consumeLog);
             $consumeLog->setCostTransaction($this);
         }
-
-        return $this;
     }
 
-    public function removeCostLog(ConsumeLog $consumeLog): static
+    public function removeCostLog(ConsumeLog $consumeLog): void
     {
         if ($this->constLogs->removeElement($consumeLog)) {
             // set the owning side to null (unless already changed)
@@ -254,8 +261,6 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
                 $consumeLog->setCostTransaction(null);
             }
         }
-
-        return $this;
     }
 
     /**
@@ -266,17 +271,15 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
         return $this->consumeLogs;
     }
 
-    public function addConsumeLog(ConsumeLog $consumeLog): static
+    public function addConsumeLog(ConsumeLog $consumeLog): void
     {
         if (!$this->consumeLogs->contains($consumeLog)) {
             $this->consumeLogs->add($consumeLog);
             $consumeLog->setConsumeTransaction($this);
         }
-
-        return $this;
     }
 
-    public function removeConsumeLog(ConsumeLog $consumeLog): static
+    public function removeConsumeLog(ConsumeLog $consumeLog): void
     {
         if ($this->consumeLogs->removeElement($consumeLog)) {
             // set the owning side to null (unless already changed)
@@ -284,18 +287,6 @@ class Transaction implements AdminArrayInterface, BenefitResource, \Stringable
                 $consumeLog->setConsumeTransaction(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): void
-    {
-        $this->createdFromIp = $createdFromIp;
     }
 
     public function __toString(): string

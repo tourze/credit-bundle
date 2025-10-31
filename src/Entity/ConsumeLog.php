@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Entity;
 
 use CreditBundle\Repository\ConsumeLogRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Tourze\DoctrineIpBundle\Attribute\CreateIpColumn;
+use Symfony\Component\Validator\Constraints as Assert;
+use Tourze\DoctrineIpBundle\Traits\CreatedFromIpAware;
 use Tourze\DoctrineSnowflakeBundle\Traits\SnowflakeKeyAware;
 use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 
@@ -15,6 +18,7 @@ use Tourze\DoctrineTimestampBundle\Traits\CreateTimeAware;
 class ConsumeLog implements \Stringable
 {
     use CreateTimeAware;
+    use CreatedFromIpAware;
     use SnowflakeKeyAware;
 
     /**
@@ -32,23 +36,19 @@ class ConsumeLog implements \Stringable
     private ?Transaction $consumeTransaction = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2, options: ['comment' => '消耗金额'])]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
+    #[Assert\Length(max: 13)]
     private ?string $amount = null;
-
-    #[CreateIpColumn]
-    #[ORM\Column(length: 128, nullable: true, options: ['comment' => '创建时IP'])]
-    private ?string $createdFromIp = null;
-
 
     public function getCostTransaction(): ?Transaction
     {
         return $this->costTransaction;
     }
 
-    public function setCostTransaction(?Transaction $costTransaction): static
+    public function setCostTransaction(?Transaction $costTransaction): void
     {
         $this->costTransaction = $costTransaction;
-
-        return $this;
     }
 
     public function getConsumeTransaction(): ?Transaction
@@ -56,11 +56,9 @@ class ConsumeLog implements \Stringable
         return $this->consumeTransaction;
     }
 
-    public function setConsumeTransaction(?Transaction $consumeTransaction): static
+    public function setConsumeTransaction(?Transaction $consumeTransaction): void
     {
         $this->consumeTransaction = $consumeTransaction;
-
-        return $this;
     }
 
     public function getAmount(): ?string
@@ -68,23 +66,9 @@ class ConsumeLog implements \Stringable
         return $this->amount;
     }
 
-    public function setAmount(string $amount): static
+    public function setAmount(string $amount): void
     {
         $this->amount = $amount;
-
-        return $this;
-    }
-
-    public function setCreatedFromIp(?string $createdFromIp): self
-    {
-        $this->createdFromIp = $createdFromIp;
-
-        return $this;
-    }
-
-    public function getCreatedFromIp(): ?string
-    {
-        return $this->createdFromIp;
     }
 
     public function __toString(): string

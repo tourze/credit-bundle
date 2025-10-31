@@ -1,21 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Procedure;
 
 use Carbon\CarbonImmutable;
+use CreditBundle\Entity\Account;
 use CreditBundle\Entity\Transaction;
+use CreditBundle\Exception\TransactionException;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use CreditBundle\Service\AccountService;
-use CreditBundle\Service\CurrencyManager;
-use Doctrine\Common\Collections\Criteria;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
 use Tourze\JsonRPC\Core\Attribute\MethodParam;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
-use Tourze\JsonRPC\Core\Exception\ApiException;
 use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
 use Tourze\JsonRPCPaginatorBundle\Procedure\PaginatorTrait;
 
@@ -38,38 +39,42 @@ class GetUserCreditTransaction extends BaseProcedure
         private readonly TransactionRepository $transactionRepository,
         private readonly AccountService $accountService,
         private readonly AccountRepository $accountRepository,
-        private readonly CurrencyManager $currencyManager,
     ) {
     }
 
     public function execute(): array
     {
         $account = $this->accountRepository->findOneBy(['user' => $this->security->getUser()]);
-        if (empty($account)) {
-            throw new ApiException('暂无记录');
+        if (null === $account) {
+            throw new TransactionException('暂无记录');
         }
 
         $qb = $this->transactionRepository->createQueryBuilder('a')
             ->andWhere('a.account = :account')
             ->setParameter('account', $account)
-            ->addOrderBy('a.id', Criteria::DESC);
+            ->addOrderBy('a.id', 'DESC')
+        ;
 
-        if ($this->startTime !== '') {
+        if ('' !== $this->startTime) {
             $qb = $qb->andWhere('a.createTime > :startTime')
-                ->setParameter('startTime', CarbonImmutable::parse($this->startTime));
+                ->setParameter('startTime', CarbonImmutable::parse($this->startTime))
+            ;
         }
-        if ($this->endTime !== '') {
+        if ('' !== $this->endTime) {
             $qb = $qb->andWhere('a.createTime < :endTime')
-                ->setParameter('endTime', CarbonImmutable::parse($this->endTime));
+                ->setParameter('endTime', CarbonImmutable::parse($this->endTime))
+            ;
         }
 
         // 转化数据，计算总积分
         $now = CarbonImmutable::now();
+        assert($account instanceof Account, 'Account should be an Account entity');
+
         $totalCredit = $this->accountService->getValidAmount($account);  // 当前总积分
         $expiringCredit = $this->accountService->getExpiringAmount($account, $now, $now->addDays(30)); // 即将过期积分
         $result = $this->fetchList($qb, function (Transaction $item) {
             // todo 后面改成event处理
-            if ('数据迁移20241216' == $item->getRemark()) {
+            if ('数据迁移20241216' === $item->getRemark()) {
                 return null;
             }
             $tmp = [
@@ -81,22 +86,22 @@ class GetUserCreditTransaction extends BaseProcedure
 
             // 转出
             if ($item->getAmount() < 0) {
-                $tmp['outAmount'] = '-' . abs((float)$this->currencyManager->getPriceNumber($item->getAmount()));
+                $tmp['outAmount'] = '-' . abs((float) $item->getAmount());
                 $tmp['type'] = 'out';
             }
 
             // 转入
             if ($item->getAmount() > 0) {
                 // 当前总积分 = 转入金额 - 消耗情况
-                $tmp['inAmount'] = '+' . abs((float)$this->currencyManager->getPriceNumber($item->getAmount()));
+                $tmp['inAmount'] = '+' . abs((float) $item->getAmount());
                 $tmp['type'] = 'in';
             }
 
             return $tmp;
         });
 
-        if (empty($result)) {
-            throw new ApiException('没有数据');
+        if ([] === $result) {
+            throw new TransactionException('没有数据');
         }
         $result['total'] = $totalCredit;
         $result['expiring'] = $expiringCredit;

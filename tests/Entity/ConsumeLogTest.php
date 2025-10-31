@@ -5,13 +5,29 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Entity;
 
 use CreditBundle\Entity\ConsumeLog;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 
-class ConsumeLogTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(ConsumeLog::class)]
+final class ConsumeLogTest extends AbstractEntityTestCase
 {
-    public function testEntityCreation(): void
+    protected function createEntity(): object
     {
-        $entity = new ConsumeLog();
-        self::assertInstanceOf(ConsumeLog::class, $entity);
+        return new ConsumeLog();
+    }
+
+    /**
+     * @return iterable<array{string, mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        return [
+            'costTransaction' => ['costTransaction', null],
+            'consumeTransaction' => ['consumeTransaction', null],
+            'amount' => ['amount', '50.00'],
+        ];
     }
 }

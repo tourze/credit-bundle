@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace CreditBundle\Command;
 
 use CreditBundle\Service\AccountService;
-use CreditBundle\Service\CurrencyService;
 use CreditBundle\Service\TransactionService;
 use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -17,10 +18,10 @@ use Tourze\SnowflakeBundle\Service\Snowflake;
 class IncreaseCommand extends Command
 {
     public const NAME = 'credit:increase';
+
     public function __construct(
         private readonly UserLoaderInterface $userLoader,
         private readonly AccountService $accountService,
-        private readonly CurrencyService $currencyService,
         private readonly TransactionService $transactionService,
         private readonly Snowflake $snowflake,
     ) {
@@ -38,12 +39,37 @@ class IncreaseCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $currency = $this->currencyService->getCurrencyByCode($input->getArgument('currency'));
+        $currency = $input->getArgument('currency');
+        $userId = $input->getArgument('userId');
+        $amountArg = $input->getArgument('amount');
 
-        $bizUser = $this->userLoader->loadUserByIdentifier($input->getArgument('userId'));
+        if (!is_string($currency)) {
+            $output->writeln('<error>Currency must be a string</error>');
+
+            return Command::INVALID;
+        }
+
+        if (!is_string($userId)) {
+            $output->writeln('<error>User ID must be a string</error>');
+
+            return Command::INVALID;
+        }
+
+        if (!is_numeric($amountArg)) {
+            $output->writeln('<error>Amount must be numeric</error>');
+
+            return Command::INVALID;
+        }
+
+        $bizUser = $this->userLoader->loadUserByIdentifier($userId);
+        if (null === $bizUser) {
+            $output->writeln('<error>User not found</error>');
+
+            return Command::FAILURE;
+        }
         $account = $this->accountService->getAccountByUser($bizUser, $currency);
 
-        $amount = abs($input->getArgument('amount'));
+        $amount = abs((float) $amountArg);
 
         $this->transactionService->increase(
             $this->snowflake->id(),

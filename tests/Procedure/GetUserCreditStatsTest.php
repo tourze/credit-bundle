@@ -5,25 +5,40 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Procedure;
 
 use CreditBundle\Procedure\GetUserCreditStats;
-use CreditBundle\Service\AccountService;
-use CreditBundle\Service\CurrencyService;
-use PHPUnit\Framework\TestCase;
-use Symfony\Bundle\SecurityBundle\Security;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
 
-class GetUserCreditStatsTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(GetUserCreditStats::class)]
+#[RunTestsInSeparateProcesses]
+final class GetUserCreditStatsTest extends AbstractProcedureTestCase
 {
+    protected function onSetUp(): void
+    {
+        // 集成测试的设置逻辑，如果需要的话
+    }
+
     public function testConstruct(): void
     {
-        $security = $this->createMock(Security::class);
-        $accountService = $this->createMock(AccountService::class);
-        $currencyService = $this->createMock(CurrencyService::class);
-        
-        $procedure = new GetUserCreditStats(
-            $security,
-            $accountService,
-            $currencyService
-        );
-        
+        $container = self::getContainer();
+        $procedure = $container->get(GetUserCreditStats::class);
         $this->assertInstanceOf(GetUserCreditStats::class, $procedure);
     }
-} 
+
+    public function testExecute(): void
+    {
+        // 在没有登录用户的情况下，应该抛出异常
+        $container = self::getContainer();
+        /** @var GetUserCreditStats $procedure */
+        $procedure = $container->get(GetUserCreditStats::class);
+        $procedure->currency = 'CNY';
+
+        $this->expectException(\AssertionError::class);
+        $this->expectExceptionMessage('User should be authenticated');
+
+        $procedure->execute();
+    }
+}

@@ -3,46 +3,39 @@
 namespace CreditBundle\Tests;
 
 use CreditBundle\Entity\Account;
-use CreditBundle\Entity\Currency;
+use CreditBundle\Entity\AdjustRequest;
 use CreditBundle\Entity\Limit;
 use CreditBundle\Entity\Transaction;
+use CreditBundle\Enum\AdjustRequestStatus;
+use CreditBundle\Enum\AdjustRequestType;
 use CreditBundle\Enum\LimitType;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 class TestDataFactory
 {
     /**
-     * 创建Currency实体
+     * 创建币种代码字符串
      */
-    public static function createCurrency(string $code = 'CNY', string $name = '人民币', bool $main = true, bool $valid = true): Currency
+    public static function createCurrency(string $code = 'CNY'): string
     {
-        $currency = new Currency();
-        $currency->setCurrency($code);
-        $currency->setName($name);
-        $currency->setMain($main);
-        $currency->setValid($valid);
-
-        // 使用反射设置ID
-        self::setEntityId($currency, 1);
-
-        return $currency;
+        return $code;
     }
 
     /**
      * 创建Account实体
      */
-    public static function createAccount(string $name = 'Test Account', ?Currency $currency = null, ?UserInterface $user = null): Account
+    public static function createAccount(string $name = 'Test Account', ?string $currency = null, ?UserInterface $user = null): Account
     {
         $account = new Account();
         $account->setName($name);
 
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = self::createCurrency();
         }
 
         $account->setCurrency($currency);
 
-        if ($user !== null) {
+        if (null !== $user) {
             $account->setUser($user);
         }
 
@@ -56,27 +49,26 @@ class TestDataFactory
      * 创建Transaction实体
      */
     public static function createTransaction(
-        string              $eventNo = 'TEST-123',
-        ?Account            $account = null,
-        float               $amount = 100.00,
-        ?string             $remark = 'Test transaction',
-        ?\DateTimeInterface $expireTime = null
-    ): Transaction
-    {
+        string $eventNo = 'TEST-123',
+        ?Account $account = null,
+        float $amount = 100.00,
+        ?string $remark = 'Test transaction',
+        ?\DateTimeInterface $expireTime = null,
+    ): Transaction {
         $transaction = new Transaction();
         $transaction->setEventNo($eventNo);
 
-        if ($account === null) {
+        if (null === $account) {
             $account = self::createAccount();
         }
 
         $transaction->setAccount($account);
         $transaction->setCurrency($account->getCurrency());
-        $transaction->setAmount((string)$amount);
-        $transaction->setBalance((string)$amount);
+        $transaction->setAmount((string) $amount);
+        $transaction->setBalance((string) $amount);
         $transaction->setRemark($remark);
 
-        if ($expireTime !== null) {
+        if (null !== $expireTime) {
             $transaction->setExpireTime($expireTime);
         }
 
@@ -90,22 +82,21 @@ class TestDataFactory
      * 创建Limit实体
      */
     public static function createLimit(
-        ?Account            $account = null,
-        ?LimitType          $type = null,
-        float               $value = 1000.00,
+        ?Account $account = null,
+        ?LimitType $type = null,
+        float $value = 1000.00,
         ?\DateTimeInterface $startTime = null,
-        ?\DateTimeInterface $endTime = null
-    ): Limit
-    {
+        ?\DateTimeInterface $endTime = null,
+    ): Limit {
         $limit = new Limit();
 
-        if ($account === null) {
+        if (null === $account) {
             $account = self::createAccount();
         }
 
         $limit->setAccount($account);
         $limit->setType($type ?? LimitType::DAILY_IN_LIMIT);
-        $limit->setValue((int)$value);
+        $limit->setValue((int) $value);
 
         // Limit 实体不包含 startTime 和 endTime 字段
 
@@ -113,6 +104,34 @@ class TestDataFactory
         self::setEntityId($limit, 1);
 
         return $limit;
+    }
+
+    /**
+     * 创建AdjustRequest实体
+     */
+    public static function createAdjustRequest(
+        ?Account $account = null,
+        string $amount = '100.00',
+        ?AdjustRequestType $type = null,
+        ?AdjustRequestStatus $status = null,
+        ?string $remark = 'Test adjust request',
+    ): AdjustRequest {
+        $adjustRequest = new AdjustRequest();
+
+        if (null === $account) {
+            $account = self::createAccount();
+        }
+
+        $adjustRequest->setAccount($account);
+        $adjustRequest->setAmount($amount);
+        $adjustRequest->setType($type ?? AdjustRequestType::INCREASE);
+        $adjustRequest->setStatus($status ?? AdjustRequestStatus::EXAMINE);
+        $adjustRequest->setRemark($remark);
+
+        // 使用反射设置ID
+        self::setEntityId($adjustRequest, 1);
+
+        return $adjustRequest;
     }
 
     /**

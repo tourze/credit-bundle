@@ -4,40 +4,40 @@ declare(strict_types=1);
 
 namespace CreditBundle\Tests;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-class TestDataFactoryTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(TestDataFactory::class)]
+final class TestDataFactoryTest extends TestCase
 {
-    private TestDataFactory $factory;
-
-    protected function setUp(): void
-    {
-        $this->factory = new TestDataFactory();
-    }
-
-    public function testFactoryCreation(): void
-    {
-        self::assertInstanceOf(TestDataFactory::class, $this->factory);
-    }
-
     public function testCreateCurrency(): void
     {
-        $currency = $this->factory->createCurrency();
+        $currency = TestDataFactory::createCurrency();
 
-        self::assertInstanceOf(\CreditBundle\Entity\Currency::class, $currency);
+        // 测试货币代码
+        self::assertNotEmpty($currency);
+        self::assertIsString($currency);
     }
 
     public function testCreateAccount(): void
     {
-        $account = $this->factory->createAccount();
+        $account = TestDataFactory::createAccount();
 
-        self::assertInstanceOf(\CreditBundle\Entity\Account::class, $account);
+        // 测试账户属性
+        self::assertNotEmpty($account->getName());
+        self::assertNotEmpty($account->getCurrency());
     }
 
     public function testCreateTransaction(): void
     {
-        $transaction = $this->factory->createTransaction();
+        $transaction = TestDataFactory::createTransaction();
 
-        self::assertInstanceOf(\CreditBundle\Entity\Transaction::class, $transaction);
+        // 测试交易属性
+        self::assertNotEmpty($transaction->getEventNo());
+        self::assertNotEmpty($transaction->getAmount());
+        self::assertNotEmpty($transaction->getAccount()->getName());
     }
 }

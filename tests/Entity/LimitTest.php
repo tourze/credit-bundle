@@ -5,13 +5,30 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Entity;
 
 use CreditBundle\Entity\Limit;
-use PHPUnit\Framework\TestCase;
+use CreditBundle\Enum\LimitType;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tourze\PHPUnitDoctrineEntity\AbstractEntityTestCase;
 
-class LimitTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(Limit::class)]
+final class LimitTest extends AbstractEntityTestCase
 {
-    public function testEntityCreation(): void
+    protected function createEntity(): object
     {
-        $entity = new Limit();
-        self::assertInstanceOf(Limit::class, $entity);
+        return new Limit();
+    }
+
+    /**
+     * @return iterable<array{string, mixed}>
+     */
+    public static function propertiesProvider(): iterable
+    {
+        return [
+            'type' => ['type', LimitType::DAILY_OUT_LIMIT],
+            'value' => ['value', 1000],
+            'remark' => ['remark', 'Test limit'],
+        ];
     }
 }

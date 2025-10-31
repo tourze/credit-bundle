@@ -4,4 +4,6 @@ declare(strict_types=1);
 
 namespace CreditBundle\Exception;
 
-class ConsumeLogException extends \LogicException {}
+class ConsumeLogException extends \LogicException
+{
+}

@@ -5,36 +5,48 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Service;
 
 use CreditBundle\Service\AttributeTypeProvider;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
 
-class AttributeTypeProviderTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(AttributeTypeProvider::class)]
+#[RunTestsInSeparateProcesses]
+final class AttributeTypeProviderTest extends AbstractIntegrationTestCase
 {
-    public function testProviderCreation(): void
+    protected function onSetUp(): void
     {
-        $repository = $this->createMock(\CreditBundle\Repository\CurrencyRepository::class);
-        $provider = new AttributeTypeProvider($repository);
+    }
 
+    public function testProviderHasRequiredMethods(): void
+    {
+        $provider = self::getContainer()->get(AttributeTypeProvider::class);
         self::assertInstanceOf(AttributeTypeProvider::class, $provider);
+
+        // 验证提供者可以生成选择数据
+        $data = $provider->genSelectData();
+        self::assertInstanceOf(\Generator::class, $data);
     }
 
     public function testGenSelectData(): void
     {
-        $currency = $this->createMock(\CreditBundle\Entity\Currency::class);
-        $currency->method('getName')->willReturn('测试币种');
-        $currency->method('getCurrency')->willReturn('TEST');
-
-        $repository = $this->createMock(\CreditBundle\Repository\CurrencyRepository::class);
-        $repository->method('findBy')->willReturn([$currency]);
-
-        $provider = new AttributeTypeProvider($repository);
+        $provider = self::getContainer()->get(AttributeTypeProvider::class);
+        self::assertInstanceOf(AttributeTypeProvider::class, $provider);
         $data = $provider->genSelectData();
 
         self::assertInstanceOf(\Generator::class, $data);
-        
+
         $dataArray = iterator_to_array($data);
         self::assertNotEmpty($dataArray);
         self::assertArrayHasKey('label', $dataArray[0]);
-        self::assertEquals('测试币种', $dataArray[0]['label']);
-        self::assertEquals('credit:TEST', $dataArray[0]['value']);
+        self::assertEquals('人民币', $dataArray[0]['label']);
+        self::assertEquals('credit:CNY', $dataArray[0]['value']);
+
+        // 验证特定积分选项
+        $lastItem = end($dataArray);
+        self::assertEquals('特定积分', $lastItem['label']);
+        self::assertEquals('special_credit', $lastItem['value']);
     }
 }
