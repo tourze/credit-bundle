@@ -9,6 +9,7 @@ use CreditBundle\Repository\AccountRepository;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Tourze\PHPUnitSymfonyKernelTest\AbstractRepositoryTestCase;
+use Tourze\UserServiceContracts\UserManagerInterface;
 
 /**
  * @internal
@@ -112,7 +113,7 @@ final class AccountRepositoryTest extends AbstractRepositoryTestCase
         self::cleanDatabase();
 
         // 创建一个有用户的账户
-        $user = $this->createUser('testuser', 'password', ['ROLE_USER']);
+        $user = self::getService(UserManagerInterface::class)->createUser('testuser', password: 'password', roles: ['ROLE_USER']);
         $account = new Account();
         $account->setName('User Account');
         $account->setCurrency('CNY');
@@ -136,7 +137,7 @@ final class AccountRepositoryTest extends AbstractRepositoryTestCase
         self::cleanDatabase();
 
         // 创建用户和关联账户
-        $user = $this->createUser('testuser', 'password', ['ROLE_USER']);
+        $user = self::getService(UserManagerInterface::class)->createUser('testuser', password: 'password', roles: ['ROLE_USER']);
         $account = new Account();
         $account->setName('User Linked Account');
         $account->setCurrency('CNY');
