@@ -139,8 +139,7 @@ final class TransactionCrudControllerTest extends AbstractEasyAdminControllerTes
 
     public function testValidationErrors(): void
     {
-        $client = self::createClientWithDatabase();
-        $this->loginAsAdmin($client);
+        $client = self::createAuthenticatedClient();
 
         // 尝试访问新建表单页面
         $url = $this->generateAdminUrl('new', ['entityFqcn' => Transaction::class]);
