@@ -58,7 +58,7 @@
     "tourze/json-rpc-security-bundle": "1.0.*",
     "tourze/lock-service-bundle": "1.0.*",
     "tourze/resource-manage-bundle": "1.0.*",
-    "tourze/symfony-aop-async-bundle": "0.0.*",
+    "tourze/symfony-aop-async-bundle": "1.0.*",
     "tourze/symfony-aop-bundle": "1.0.*",
     "tourze/symfony-routing-auto-loader-bundle": "1.0.*",
     "tourze/symfony-snowflake-bundle": "1.0.*"
