@@ -24,9 +24,13 @@ class TestDataFactory
     /**
      * 创建Account实体
      */
-    public static function createAccount(string $name = 'Test Account', ?string $currency = null, ?UserInterface $user = null): Account
+    public static function createAccount(?string $name = null, ?string $currency = null, ?UserInterface $user = null): Account
     {
         $account = new Account();
+        // 仅当未传入名称时追加随机后缀,确保UNIQUE约束不冲突
+        if (null === $name) {
+            $name = 'Test Account-' . bin2hex(random_bytes(6));
+        }
         $account->setName($name);
 
         if (null === $currency) {

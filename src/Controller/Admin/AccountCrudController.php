@@ -65,7 +65,8 @@ final class AccountCrudController extends AbstractCrudController
 
         yield AssociationField::new('user', '关联用户')
             ->setColumns('col-md-6')
-            ->autocomplete()
+            // 移除autocomplete,避免缺少CRUD控制器配置的错误
+            // ->autocomplete()
         ;
 
         yield MoneyField::new('endingBalance', '期末余额')

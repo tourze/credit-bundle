@@ -36,7 +36,7 @@ final class GetUserCreditStatsTest extends AbstractProcedureTestCase
         $procedure = $container->get(GetUserCreditStats::class);
         $procedure->currency = 'CNY';
 
-        $this->expectException(\AssertionError::class);
+        $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('User should be authenticated');
 
         $procedure->execute();

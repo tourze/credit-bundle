@@ -32,7 +32,9 @@ class GetUserCreditStats extends BaseProcedure
     public function execute(): array
     {
         $user = $this->security->getUser();
-        assert(null !== $user, 'User should be authenticated');
+        if (null === $user) {
+            throw new \LogicException('User should be authenticated');
+        }
 
         $account = $this->accountService->getAccountByUser($user, $this->currency);
 

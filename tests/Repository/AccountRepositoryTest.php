@@ -114,6 +114,10 @@ final class AccountRepositoryTest extends AbstractRepositoryTestCase
 
         // 创建一个有用户的账户
         $user = self::getService(UserManagerInterface::class)->createUser('testuser', password: 'password', roles: ['ROLE_USER']);
+        // 显式persist user以避免级联persist错误
+        self::getEntityManager()->persist($user);
+        self::getEntityManager()->flush();
+
         $account = new Account();
         $account->setName('User Account');
         $account->setCurrency('CNY');
@@ -138,6 +142,10 @@ final class AccountRepositoryTest extends AbstractRepositoryTestCase
 
         // 创建用户和关联账户
         $user = self::getService(UserManagerInterface::class)->createUser('testuser', password: 'password', roles: ['ROLE_USER']);
+        // 显式persist user以避免级联persist错误
+        self::getEntityManager()->persist($user);
+        self::getEntityManager()->flush();
+
         $account = new Account();
         $account->setName('User Linked Account');
         $account->setCurrency('CNY');
