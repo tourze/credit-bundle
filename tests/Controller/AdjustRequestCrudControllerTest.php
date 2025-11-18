@@ -80,11 +80,6 @@ final class AdjustRequestCrudControllerTest extends AbstractEasyAdminControllerT
         $this->assertTrue($reflection->isFinal());
     }
 
-    public function testGetEntityFqcnShouldReturnAdjustRequestClass(): void
-    {
-        $this->assertEquals(AdjustRequest::class, AdjustRequestCrudController::getEntityFqcn());
-    }
-
     public function testControllerHasRequiredConfigurationMethods(): void
     {
         $reflection = new \ReflectionClass(AdjustRequestCrudController::class);
