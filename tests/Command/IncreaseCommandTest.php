@@ -33,7 +33,7 @@ final class IncreaseCommandTest extends AbstractCommandTestCase
         $this->assertInstanceOf(Command::class, $command);
 
         $application = new Application();
-        $application->add($command);
+        $application->addCommand($command);
 
         $command = $application->find('credit:increase');
         $this->commandTester = new CommandTester($command);

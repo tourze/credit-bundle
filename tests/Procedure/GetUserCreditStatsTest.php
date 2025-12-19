@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace CreditBundle\Tests\Procedure;
 
+use CreditBundle\Param\GetUserCreditStatsParam;
 use CreditBundle\Procedure\GetUserCreditStats;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
+use Tourze\PHPUnitJsonRPC\AbstractProcedureTestCase;
 
 /**
  * @internal
@@ -34,11 +35,11 @@ final class GetUserCreditStatsTest extends AbstractProcedureTestCase
         $container = self::getContainer();
         /** @var GetUserCreditStats $procedure */
         $procedure = $container->get(GetUserCreditStats::class);
-        $procedure->currency = 'CNY';
+        $param = new GetUserCreditStatsParam(currency: 'CNY');
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage('User should be authenticated');
 
-        $procedure->execute();
+        $procedure->execute($param);
     }
 }

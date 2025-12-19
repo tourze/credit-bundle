@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Procedure;
 
 use CreditBundle\Exception\TransactionException;
+use CreditBundle\Param\GetUserCreditTransactionParam;
 use CreditBundle\Procedure\GetUserCreditTransaction;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
+use Tourze\PHPUnitJsonRPC\AbstractProcedureTestCase;
 
 /**
  * @internal
@@ -40,12 +41,15 @@ final class GetUserCreditTransactionTest extends AbstractProcedureTestCase
 
         /** @var GetUserCreditTransaction $procedure */
         $procedure = $container->get(GetUserCreditTransaction::class);
-        $procedure->currentPage = 1;
-        $procedure->pageSize = 10;
+
+        $param = new GetUserCreditTransactionParam(
+            currentPage: 1,
+            pageSize: 10
+        );
 
         $this->expectException(TransactionException::class);
         $this->expectExceptionMessage('暂无记录');
 
-        $procedure->execute();
+        $procedure->execute($param);
     }
 }

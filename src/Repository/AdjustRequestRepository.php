@@ -15,7 +15,7 @@ use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
  */
 #[Autoconfigure(public: true)]
 #[AsRepository(entityClass: AdjustRequest::class)]
-class AdjustRequestRepository extends ServiceEntityRepository
+final class AdjustRequestRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

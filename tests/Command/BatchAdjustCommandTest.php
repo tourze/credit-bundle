@@ -36,7 +36,7 @@ final class BatchAdjustCommandTest extends AbstractCommandTestCase
         $this->assertInstanceOf(Command::class, $command);
 
         $application = new Application();
-        $application->add($command);
+        $application->addCommand($command);
 
         $command = $application->find('credit:batch-adjust');
         $this->commandTester = new CommandTester($command);

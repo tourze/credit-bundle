@@ -15,6 +15,3 @@ services:
     resource: '../../Repository/'
   CreditBundle\Service\:
     resource: '../../Service/'
-  
-  # AdminMenu 服务
-  CreditBundle\AdminMenu: ~

@@ -21,7 +21,7 @@ use Tourze\SnowflakeBundle\Service\Snowflake;
  * 读取xls文件并一行行解析后进行积分调整，xls表头有“积分名”“账户名”“变更数值”“变更备注”
  */
 #[AsCommand(name: self::NAME, description: '通过xls文件调整积分')]
-class BatchAdjustCommand extends Command
+final class BatchAdjustCommand extends Command
 {
     public const NAME = 'credit:batch-adjust';
 

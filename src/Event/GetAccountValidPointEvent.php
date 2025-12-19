@@ -7,7 +7,7 @@ namespace CreditBundle\Event;
 use CreditBundle\Entity\Account;
 use Symfony\Contracts\EventDispatcher\Event;
 
-class GetAccountValidPointEvent extends Event
+final class GetAccountValidPointEvent extends Event
 {
     private Account $account;
 

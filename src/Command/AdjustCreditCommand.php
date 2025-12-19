@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(name: self::NAME, description: '通过流水调整积分')]
 #[WithMonologChannel(channel: 'credit')]
-class AdjustCreditCommand extends Command
+final class AdjustCreditCommand extends Command
 {
     public const NAME = 'credit:adjust';
 

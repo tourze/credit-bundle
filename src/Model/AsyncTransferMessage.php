@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace CreditBundle\Model;
 
-class AsyncTransferMessage
+final class AsyncTransferMessage
 {
     use RequestAttributeTrait;
 

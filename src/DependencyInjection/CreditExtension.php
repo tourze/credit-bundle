@@ -6,7 +6,7 @@ namespace CreditBundle\DependencyInjection;
 
 use Tourze\SymfonyDependencyServiceLoader\AutoExtension;
 
-class CreditExtension extends AutoExtension
+final class CreditExtension extends AutoExtension
 {
     protected function getConfigDir(): string
     {

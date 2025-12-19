@@ -15,7 +15,7 @@ use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
  */
 #[Autoconfigure(public: true)]
 #[AsRepository(entityClass: ConsumeLog::class)]
-class ConsumeLogRepository extends ServiceEntityRepository
+final class ConsumeLogRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

@@ -19,7 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Tourze\SnowflakeBundle\Service\Snowflake;
 
 #[AsCommand(name: self::NAME, description: '计算过期积分')]
-class CalcExpireTransactionCommand extends Command
+final class CalcExpireTransactionCommand extends Command
 {
     public const NAME = 'credit:calc:expire-transaction';
 

@@ -7,7 +7,7 @@ namespace CreditBundle\Event;
 use CreditBundle\Entity\Account;
 use Symfony\Contracts\EventDispatcher\Event;
 
-class IncreasedEvent extends Event
+final class IncreasedEvent extends Event
 {
     private Account $account;
 

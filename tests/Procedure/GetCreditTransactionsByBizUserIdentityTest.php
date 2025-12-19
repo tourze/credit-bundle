@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace CreditBundle\Tests\Procedure;
 
 use CreditBundle\Entity\Account;
+use CreditBundle\Param\GetCreditTransactionsByBizUserIdentityParam;
 use CreditBundle\Procedure\GetCreditTransactionsByBizUserIdentity;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
-use Tourze\JsonRPC\Core\Tests\AbstractProcedureTestCase;
+use Tourze\JsonRPC\Core\Result\ArrayResult;
+use Tourze\PHPUnitJsonRPC\AbstractProcedureTestCase;
 
 /**
  * @internal
@@ -52,17 +54,21 @@ final class GetCreditTransactionsByBizUserIdentityTest extends AbstractProcedure
         // 获取 Procedure 服务
         $procedure = $container->get(GetCreditTransactionsByBizUserIdentity::class);
         self::assertInstanceOf(GetCreditTransactionsByBizUserIdentity::class, $procedure);
-        $procedure->userId = $user->getUserIdentifier();
-        $procedure->currentPage = 1;
-        $procedure->pageSize = 10;
 
-        $result = $procedure->execute();
+        $param = new GetCreditTransactionsByBizUserIdentityParam(
+            userId: $user->getUserIdentifier(),
+            currentPage: 1,
+            pageSize: 10
+        );
 
-        $this->assertIsArray($result);
-        $this->assertArrayHasKey('list', $result);
-        $this->assertArrayHasKey('pagination', $result);
+        $result = $procedure->execute($param);
 
-        $pagination = $result['pagination'];
+        $this->assertInstanceOf(ArrayResult::class, $result);
+        $data = $result->toArray();
+        $this->assertArrayHasKey('list', $data);
+        $this->assertArrayHasKey('pagination', $data);
+
+        $pagination = $data['pagination'];
         $this->assertIsArray($pagination, 'Pagination should be an array');
         $this->assertArrayHasKey('current', $pagination);
         $this->assertArrayHasKey('pageSize', $pagination);

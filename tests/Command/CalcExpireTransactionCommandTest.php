@@ -32,7 +32,7 @@ final class CalcExpireTransactionCommandTest extends AbstractCommandTestCase
         $this->assertInstanceOf(Command::class, $command);
 
         $application = new Application();
-        $application->add($command);
+        $application->addCommand($command);
 
         $command = $application->find('credit:calc:expire-transaction');
         $this->commandTester = new CommandTester($command);

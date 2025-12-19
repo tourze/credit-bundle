@@ -15,7 +15,7 @@ use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
  */
 #[Autoconfigure(public: true)]
 #[AsRepository(entityClass: Limit::class)]
-class LimitRepository extends ServiceEntityRepository
+final class LimitRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

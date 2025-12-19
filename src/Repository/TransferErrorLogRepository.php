@@ -15,7 +15,7 @@ use Tourze\PHPUnitSymfonyKernelTest\Attribute\AsRepository;
  */
 #[Autoconfigure(public: true)]
 #[AsRepository(entityClass: TransferErrorLog::class)]
-class TransferErrorLogRepository extends ServiceEntityRepository
+final class TransferErrorLogRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {

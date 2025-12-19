@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Tourze\SnowflakeBundle\Service\Snowflake;
 
 #[AsCommand(name: self::NAME, description: '减少积分')]
-class DecreaseCommand extends Command
+final class DecreaseCommand extends Command
 {
     public const NAME = 'credit:decrease';
 

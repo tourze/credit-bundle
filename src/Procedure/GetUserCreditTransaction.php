@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use CreditBundle\Entity\Account;
 use CreditBundle\Entity\Transaction;
 use CreditBundle\Exception\TransactionException;
+use CreditBundle\Param\GetUserCreditTransactionParam;
 use CreditBundle\Repository\AccountRepository;
 use CreditBundle\Repository\TransactionRepository;
 use CreditBundle\Service\AccountService;
@@ -15,8 +16,9 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Tourze\JsonRPC\Core\Attribute\MethodDoc;
 use Tourze\JsonRPC\Core\Attribute\MethodExpose;
-use Tourze\JsonRPC\Core\Attribute\MethodParam;
 use Tourze\JsonRPC\Core\Attribute\MethodTag;
+use Tourze\JsonRPC\Core\Contracts\RpcParamInterface;
+use Tourze\JsonRPC\Core\Result\ArrayResult;
 use Tourze\JsonRPC\Core\Procedure\BaseProcedure;
 use Tourze\JsonRPCPaginatorBundle\Procedure\PaginatorTrait;
 
@@ -28,12 +30,6 @@ class GetUserCreditTransaction extends BaseProcedure
 {
     use PaginatorTrait;
 
-    #[MethodParam(description: '开始时间')]
-    public string $startTime = '';
-
-    #[MethodParam(description: '结束时间')]
-    public string $endTime = '';
-
     public function __construct(
         private readonly Security $security,
         private readonly TransactionRepository $transactionRepository,
@@ -42,10 +38,13 @@ class GetUserCreditTransaction extends BaseProcedure
     ) {
     }
 
-    public function execute(): array
+    /**
+     * @phpstan-param GetUserCreditTransactionParam $param
+     */
+    public function execute(GetUserCreditTransactionParam|RpcParamInterface $param): ArrayResult
     {
         $account = $this->accountRepository->findOneBy(['user' => $this->security->getUser()]);
-        if (null === $account) {
+        if (!$account instanceof Account) {
             throw new TransactionException('暂无记录');
         }
 
@@ -55,20 +54,19 @@ class GetUserCreditTransaction extends BaseProcedure
             ->addOrderBy('a.id', 'DESC')
         ;
 
-        if ('' !== $this->startTime) {
+        if ('' !== $param->startTime) {
             $qb = $qb->andWhere('a.createTime > :startTime')
-                ->setParameter('startTime', CarbonImmutable::parse($this->startTime))
+                ->setParameter('startTime', CarbonImmutable::parse($param->startTime))
             ;
         }
-        if ('' !== $this->endTime) {
+        if ('' !== $param->endTime) {
             $qb = $qb->andWhere('a.createTime < :endTime')
-                ->setParameter('endTime', CarbonImmutable::parse($this->endTime))
+                ->setParameter('endTime', CarbonImmutable::parse($param->endTime))
             ;
         }
 
         // 转化数据，计算总积分
         $now = CarbonImmutable::now();
-        assert($account instanceof Account, 'Account should be an Account entity');
 
         $totalCredit = $this->accountService->getValidAmount($account);  // 当前总积分
         $expiringCredit = $this->accountService->getExpiringAmount($account, $now, $now->addDays(30)); // 即将过期积分
@@ -98,7 +96,7 @@ class GetUserCreditTransaction extends BaseProcedure
             }
 
             return $tmp;
-        });
+        }, null, $param);
 
         if ([] === $result) {
             throw new TransactionException('没有数据');
@@ -106,6 +104,6 @@ class GetUserCreditTransaction extends BaseProcedure
         $result['total'] = $totalCredit;
         $result['expiring'] = $expiringCredit;
 
-        return $result;
+        return new ArrayResult($result);
     }
 }
